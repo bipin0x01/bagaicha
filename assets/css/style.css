@@ -83,6 +83,11 @@ section#top-navbar .nav-menu ul li a {
   align-items: center;
 }
 
+.nav-content .navbar-nav > .nav-item {
+  margin: 2px;
+  padding: 5px 10px;
+}
+
 .nav-content a {
   /* links inside navbar */
   color: #000;
@@ -90,6 +95,7 @@ section#top-navbar .nav-menu ul li a {
   font-size: 18px;
   font-weight: bold;
   padding: 10px;
+  border: 1px solid transparent;
 }
 
 .nav-content a:hover {
@@ -113,9 +119,10 @@ section#top-navbar .nav-menu ul li a {
 }
 
 .nav-content a.active:hover {
-  opacity: 0.9;
+  opacity: 0.8;
   background-color: var(--secondary);
   color: var(--primary);
+  border: 1px solid var(--primary);
 }
 
 .nav-content ul {
@@ -139,12 +146,13 @@ section#top-navbar .nav-menu ul li a {
   text-decoration: none;
   font-size: 30px;
   color: #000;
-  font-weight: bold;
-  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  font-weight: 600;
+  /* font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif; */
 }
 
 .navbar-brand span {
-  color: red;
+  color: green;
+  font-weight: 800;
 }
 
 .btn {
@@ -633,4 +641,10 @@ input[type="submit"]:hover {
 .res-page-title {
   text-align: center;
   margin-bottom: 5px;
+}
+
+/* About Us page */
+
+.about-content {
+  margin: 40px;
 }

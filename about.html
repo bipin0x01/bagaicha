@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | Bagaicha - Make it Green</title>
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<style>
+    /* Internal CSS */
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        /* Scrolling Smooth */
+    }
+
+    a {
+        text-decoration: none;
+    }
+</style>
+
+<body>
+    <!-- Header -->
+    <section id="top"></section>
+    <!-- Top Navbar -->
+    <section id="top-navbar">
+        <div class="nav-menu">
+            <ul>
+                <li><a href="#">Call us: +977 9819284721</a></li>
+                <li><a href="#">Login</a></li>
+                <li><a href="#">Register</a></li>
+            </ul>
+        </div>
+    </section>
+    <!-- Top Navbar End -->
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="./index.html">Bagaicha</a>
+        <div class="nav-content">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="./index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="./research.html">Research</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="./blog.html">Blog</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="./shop.html">Shop</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="./about.html">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="./contact.html">Contact</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="user-btn">
+            <button class="cart-btn btn" id="showcart-btn">
+                <img class="icon" src="./assets/img/misc/cart.svg" />
+            </button>
+            <button class="user-btn btn" id="user-btn">
+                <img class="icon" src="./assets/img/misc/user.png" />
+            </button>
+        </div>
+    </nav>
+
+
+    <!-- Cart Popup -->
+    <div id="cart" class="cart-popup hide">
+        <!-- Inline CSS -->
+        <div class="cart-popup-content">
+            <div class="cart-popup-header">
+                <h3>Cart</h3>
+                <button class="btn" id="cart-close" type="button">
+                    X
+                </button>
+            </div>
+            <div class="cart-popup-body">
+                <div class="cart-popup-body-content">
+                    <div class="cart-popup-body-content-item">
+                        <div class="cart-popup-body-content-item-img">
+                            <img src="./assets/img/AC.jpg" alt="">
+                        </div>
+                        <div class="cart-popup-body-content-item-info">
+                            <h4>Product Name</h2>
+                                <h4>Rs. 100</h4>
+                        </div>
+                        <div class="cart-popup-body-content-item-delete">
+                            <button class="btn" type="button">
+                                <img class="icon" src="./assets/img/misc/delete.png" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="cart-popup-body-content-item">
+                        <div class="cart-popup-body-content-item-img">
+                            <img src="./assets/img/earpods.jpg" alt="">
+                        </div>
+                        <div class="cart-popup-body-content-item-info">
+                            <h4>Product Name</h2>
+                                <h4>Rs. 100</h4>
+                        </div>
+                        <div class="cart-popup-body-content-item-delete">
+                            <button class="btn" type="button">
+                                <img class="icon" src="./assets/img/misc/delete.png" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Header End -->
+
+    <!-- Main -->
+
+    <main>
+        <!-- // Page Content Header -->
+        <div class="page-content-header">
+            <div class="container">
+                <div class="page-title">About</div>
+            </div>
+        </div>
+        <!-- // Page Content Header -->
+
+        <!-- Main Page Content -->
+        <div class="about-content">
+            <p>Welcome to bagaicha.com, your one-stop shop for all things bonsai. We are a team of bonsai
+                enthusiasts who have been growing and cultivating bonsai for many years. We are passionate about
+                sharing our love for these miniature trees with others and helping people to create their own beautiful
+                bonsai gardens.</p>
+            <br>
+            <p>Our online store offers a wide variety of bonsai trees, including traditional favorites such as juniper
+                and pine, as well as more exotic varieties like ficus and elm. We also carry a range of bonsai tools
+                and accessories, such as pruners, wire, and potting soil. All of our products are carefully selected to
+                ensure the highest quality and satisfaction.</p>
+            <br>
+            <p>In addition to our online store, we also offer a wealth of information and resources on bonsai care and
+                cultivation on our website. From beginner guides to advanced techniques, we aim to be a comprehensive
+                resource for all bonsai enthusiasts.</p>
+            <p>Thank you for visiting BonsaiPlants.com. We hope you enjoy browsing our selection and learning more
+                about the wonderful world of bonsai.</p>
+        </div>
+        <!-- Main Page Content End-->
+    </main>
+    <!-- Main End -->
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer">
+            <div class="copyright">
+                <p>Copyright &copy; Bagaicha 2022</h4>
+            </div>
+            <!-- Internal Linking -->
+            <div class="gototop"><a href="#top">
+                    <div class="btn">Go To Top</div>
+                </a></div>
+        </div>
+    </footer>
+    <!-- Footer End -->
+    <script src="./assets/js/main.js"></script>
+    <script>
+        /* Internal JS */
+
+        // Cart Element
+        const cart = document.getElementById("cart");
+        const cartOpen = document.getElementById("showcart-btn");
+        const cartClose = document.getElementById("cart-close");
+        // Cart Open
+        function showcart() {
+            cart.classList.remove("hide");
+        }
+        cartOpen.addEventListener("click", showcart);
+
+        // Cart Close
+        function closecart() {
+            cart.classList.add("hide");
+        }
+        cartClose.addEventListener("click", closecart);
+    </script>
+</body>
+
+</html>
