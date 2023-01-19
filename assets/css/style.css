@@ -647,4 +647,16 @@ input[type="submit"]:hover {
 
 .about-content {
   margin: 40px;
+  display: flex;
+}
+
+.about-content .about-text {
+  margin: 20px;
+}
+
+.about-content .about-text span {
+  font-size: 30px;
+}
+
+.about-content .about-img {
 }
