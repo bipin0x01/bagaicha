@@ -504,11 +504,15 @@ section#top-navbar .nav-menu ul li a {
 }
 
 .blog-date {
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .blog-author {
-  font-size: 12px;
+  font-size: 15px;
+}
+
+.blog-body {
+  font-size: 16px !important;
 }
 
 .single-blog-post-img {
@@ -560,17 +564,20 @@ textarea {
 
 /* Style the submit button with a specific background color etc */
 input[type="submit"] {
-  background-color: #3c576e;
+  background-color: var(--primary);
   color: white;
   padding: 12px 20px;
-  border: none;
-  border-radius: 4px;
+  border: solid 2px var(--primary);
+  border-radius: 10px;
   cursor: pointer;
 }
 
 /* When moving the mouse over the submit button, add a darker green color */
 input[type="submit"]:hover {
-  background-color: skyblue;
+  background-color: var(--secondary);
+  color: var(--primary);
+  border-color: var(--primary);
+  border: solid 2px;
 }
 
 /* Add a background color and some padding around the form */
@@ -659,4 +666,42 @@ input[type="submit"]:hover {
 }
 
 .about-content .about-img {
+}
+
+/* Team Card */
+.our-team {
+  display: flex;
+}
+
+.team-card {
+  border: black 1px solid;
+  width: 200px;
+  height: 300px;
+  margin: 40px;
+}
+
+.team-img {
+  width: 100px;
+}
+
+.team-info {
+  margin: 10px;
+}
+
+.team-img {
+  width: 250px;
+  height: 250px;
+  border-radius: 5px;
+}
+
+.team-img img {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.team {
+  padding: 20px;
+  margin: 20px;
+  box-shadow: black 0px 0px 8px -3px;
 }
