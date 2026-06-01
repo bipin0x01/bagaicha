@@ -48,12 +48,13 @@ if (isset($_GET['method']) && $_GET['method'] === 'cod' && isset($_GET['uuid']))
             $order_details = $res->fetchArray(SQLITE3_ASSOC);
 
             if ($order_details) {
+                // Mark payment as paid when eSewa callback is verified.
+                $update = $db->prepare("UPDATE orders SET payment_status = 'paid', status = CASE WHEN status = 'pending' THEN 'processing' ELSE status END WHERE id = :id");
+                $update->bindValue(':id', $order_details['id'], SQLITE3_INTEGER);
+                $update->execute();
+                $order_details['payment_status'] = 'paid';
                 if ($order_details['status'] === 'pending') {
-                    // Update Order Status to completed
-                    $update = $db->prepare("UPDATE orders SET status = 'completed' WHERE id = :id");
-                    $update->bindValue(':id', $order_details['id'], SQLITE3_INTEGER);
-                    $update->execute();
-                    $order_details['status'] = 'completed'; // Reflect local update
+                    $order_details['status'] = 'processing';
                 }
                 $payment_verified = true;
             } else {
@@ -125,6 +126,10 @@ if (isset($_GET['method']) && $_GET['method'] === 'cod' && isset($_GET['uuid']))
                     <div class="flex justify-between py-2 border-b border-gray-50">
                         <span>Payment Method:</span>
                         <strong class="text-gray-800 font-bold uppercase tracking-wider"><?php echo htmlspecialchars($order_details['payment_method']); ?></strong>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span>Payment Status:</span>
+                        <strong class="text-gray-800 font-bold uppercase tracking-wider"><?php echo htmlspecialchars($order_details['payment_status'] ?? 'pending'); ?></strong>
                     </div>
                     <div class="flex justify-between items-center pt-4 border-t border-dashed border-gray-200 text-sm md:text-base font-extrabold text-gray-800">
                         <span><?php echo ($order_details['payment_method'] === 'cod') ? 'Amount to Pay (COD):' : 'Amount Paid:'; ?></span>

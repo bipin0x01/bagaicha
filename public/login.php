@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <?php 
     $page_title = "Log In | Bagaicha";
-    $page_description = "Access your Bagaicha account portal to view your purchase logs, pending orders, and personal credentials.";
+    $page_description = "Access your Bagaicha account portal to view your orders, pending orders, and personal credentials.";
     require INCLUDES_PATH . '/partials/head.php'; 
     ?>
 </head>

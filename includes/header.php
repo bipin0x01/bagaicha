@@ -56,7 +56,7 @@ $account_target = !empty($email) ? url('profile.php') : url('login.php');
                     <?php endif; ?>
                 </div>
                 <div class="border-t border-gray-100">
-                    <a href="<?php echo url('logout.php'); ?>" class="block px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50">Log out</a>
+                    <a href="<?php echo url('logout.php'); ?>" class="block px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50" data-confirm-logout="true">Log out</a>
                 </div>
             </div>
         <?php else: ?>

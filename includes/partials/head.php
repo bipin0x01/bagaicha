@@ -43,4 +43,5 @@ $meta_description = isset($page_description) ? $page_description : 'Bagaicha —
 
 <!-- Custom App CSS containing Toast Keyframes and Custom Scrollbars -->
 <link rel="stylesheet" href="<?php echo asset('css/style.css'); ?>">
-<script defer src="<?php echo asset('js/main.js'); ?>"></script>
+<?php $main_js_version = @filemtime(PUBLIC_PATH . '/assets/js/main.js') ?: time(); ?>
+<script defer src="<?php echo asset('js/main.js'); ?>?v=<?php echo $main_js_version; ?>"></script>

@@ -75,7 +75,7 @@ if ($items_res) {
             <div>
                 <span class="text-[10px] font-extrabold uppercase tracking-widest text-primary-light bg-primary/30 border border-primary-light/20 rounded-full px-3.5 py-1.5 inline-block mb-3.5">Order Management</span>
                 <h1 class="text-2xl md:text-3xl font-extrabold leading-tight tracking-tight">Order #<?php echo htmlspecialchars(substr($order['transaction_uuid'], 0, 16)); ?></h1>
-                <p class="text-xs text-gray-300 mt-2 font-medium">Placed on <?php echo date('F d, Y - h:i A', strtotime($order['created_at'])); ?></p>
+                <p class="text-xs text-gray-300 mt-2 font-medium">Placed on <?php echo format_utc_datetime($order['created_at'], 'F d, Y - h:i A'); ?></p>
             </div>
             <div class="flex gap-3">
                 <a href="/invoice.php?uuid=<?php echo urlencode($order['transaction_uuid']); ?>" target="_blank" class="bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-5 py-3.5 transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md hover:-translate-y-0.5">
@@ -142,6 +142,21 @@ if ($items_res) {
                     <div>
                         <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Payment details</span>
                         <strong class="text-xs font-semibold text-gray-700 block uppercase">Gateway: <?php echo htmlspecialchars($order['payment_method']); ?></strong>
+                        <?php
+                            $payment_status = $order['payment_status'] ?? 'pending';
+                            if ($payment_status === 'paid') {
+                                $payment_badge_class = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                            } elseif ($payment_status === 'failed') {
+                                $payment_badge_class = 'bg-rose-50 text-rose-700 border-rose-100';
+                            } elseif ($payment_status === 'cancelled') {
+                                $payment_badge_class = 'bg-slate-100 text-slate-600 border-slate-200';
+                            } else {
+                                $payment_badge_class = 'bg-amber-50 text-amber-700 border-amber-100';
+                            }
+                        ?>
+                        <span class="inline-block mt-1.5 px-2.5 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider <?php echo $payment_badge_class; ?>">
+                            Payment: <?php echo htmlspecialchars($payment_status); ?>
+                        </span>
                     </div>
 
                     <div>

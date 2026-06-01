@@ -20,7 +20,7 @@ $user_stmt = $db->prepare("SELECT created_at, phone, address FROM users WHERE em
 $user_stmt->bindValue(':email', $email, SQLITE3_TEXT);
 $user_res = $user_stmt->execute();
 $user_row = $user_res->fetchArray(SQLITE3_ASSOC);
-$reg_date = $user_row ? date('F d, Y', strtotime($user_row['created_at'])) : "N/A";
+$reg_date = $user_row ? format_utc_datetime($user_row['created_at'], 'F d, Y') : "N/A";
 $phone = $user_row ? $user_row['phone'] : (isset($_SESSION['phone']) ? $_SESSION['phone'] : "N/A");
 $address = $user_row ? $user_row['address'] : (isset($_SESSION['address']) ? $_SESSION['address'] : "N/A");
 
@@ -98,12 +98,12 @@ if ($orders_res) {
                 </div>
             </div>
             
-            <a href="/logout.php" class="w-full bg-white hover:bg-red-50 text-red-500 font-bold border border-red-200 hover:border-red-300 rounded-xl py-3.5 text-xs tracking-wider uppercase mt-8 text-center block transition-colors cursor-pointer">Log Out</a>
+            <a href="/logout.php" class="w-full bg-white hover:bg-red-50 text-red-500 font-bold border border-red-200 hover:border-red-300 rounded-xl py-3.5 text-xs tracking-wider uppercase mt-8 text-center block transition-colors cursor-pointer" data-confirm-logout="true">Log Out</a>
         </div>
 
         <!-- Right Side: Order History log -->
         <div class="flex-1 min-w-0">
-            <h2 class="text-xl font-extrabold text-gray-800 border-b-2 border-primary pb-3 mb-8 w-fit">Purchase History</h2>
+            <h2 class="text-xl font-extrabold text-gray-800 border-b-2 border-primary pb-3 mb-6 w-fit">Purchase History</h2>
             
             <?php if (empty($orders)): ?>
                 <div class="bg-white border border-gray-100 rounded-3xl py-14 px-4 text-center shadow-sm">
@@ -111,13 +111,31 @@ if ($orders_res) {
                     <a href="/shop.php" class="inline-block bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-5 py-2.5 transition-colors">Shop Bonsais Now</a>
                 </div>
             <?php else: ?>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+                    <input id="profile-order-search" type="text" placeholder="Search by reference..." class="md:col-span-2 w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700">
+                    <select id="profile-method-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                        <option value="all">All methods</option>
+                        <option value="esewa">eSewa</option>
+                        <option value="cod">COD</option>
+                    </select>
+                    <select id="profile-payment-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                        <option value="all">All payment status</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
                 <?php foreach ($orders as $order): ?>
-                    <div class="bg-white border border-gray-100 rounded-3xl mb-6 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div class="profile-order-card bg-white border border-gray-100 rounded-3xl mb-6 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                         data-reference="<?php echo htmlspecialchars(strtolower($order['transaction_uuid']), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-method="<?php echo htmlspecialchars(strtolower($order['payment_method'] ?? 'esewa'), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-payment="<?php echo htmlspecialchars(strtolower($order['payment_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>">
                         <!-- Order header -->
                         <div class="bg-gray-50/50 px-6 py-5 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 items-center">
                             <div>
                                 <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Order Date</span>
-                                <span class="text-xs font-semibold text-gray-700"><?php echo date('F d, Y - h:i A', strtotime($order['created_at'])); ?></span>
+                                <span class="text-xs font-semibold text-gray-700"><?php echo format_utc_datetime($order['created_at'], 'F d, Y - h:i A'); ?></span>
                             </div>
                             <div>
                                 <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Reference Code</span>
@@ -140,19 +158,19 @@ if ($orders_res) {
                             <div>
                                 <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Payment Status</span>
                                 <?php 
-                                    $status = $order['status'];
-                                    if ($status === 'completed') {
+                                    $payment_status = $order['payment_status'] ?? 'pending';
+                                    if ($payment_status === 'paid') {
                                         $badge_class = 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                                    } elseif ($status === 'failed') {
+                                    } elseif ($payment_status === 'failed') {
                                         $badge_class = 'bg-rose-50 text-rose-700 border-rose-100';
-                                    } elseif ($status === 'cancelled') {
+                                    } elseif ($payment_status === 'cancelled') {
                                         $badge_class = 'bg-slate-100 text-slate-600 border-slate-200';
                                     } else {
                                         $badge_class = 'bg-amber-50 text-amber-700 border-amber-100';
                                     }
                                 ?>
                                 <span class="inline-block px-2 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider <?php echo $badge_class; ?>">
-                                    <?php echo htmlspecialchars($status); ?>
+                                    <?php echo htmlspecialchars($payment_status); ?>
                                 </span>
                             </div>
                         </div>
@@ -188,12 +206,50 @@ if ($orders_res) {
                         </div>
                     </div>
                 <?php endforeach; ?>
+                <div id="profile-orders-empty" class="hidden bg-white border border-gray-100 rounded-3xl py-12 px-4 text-center shadow-sm">
+                    <p class="text-gray-500 text-sm">No orders match selected filters.</p>
+                </div>
             <?php endif; ?>
         </div>
     </main>
 
     <!-- Footer -->
     <?php require INCLUDES_PATH . '/footer.php'; ?>
+    <script>
+        function filterProfileOrders() {
+            const search = (document.getElementById('profile-order-search')?.value || '').trim().toLowerCase();
+            const method = document.getElementById('profile-method-filter')?.value || 'all';
+            const payment = document.getElementById('profile-payment-filter')?.value || 'all';
+            const cards = document.querySelectorAll('.profile-order-card');
+            let visible = 0;
+
+            cards.forEach(card => {
+                const matchesSearch = !search || (card.dataset.reference || '').includes(search);
+                const matchesMethod = method === 'all' || (card.dataset.method || '') === method;
+                const matchesPayment = payment === 'all' || (card.dataset.payment || '') === payment;
+                const show = matchesSearch && matchesMethod && matchesPayment;
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            const empty = document.getElementById('profile-orders-empty');
+            if (empty) empty.classList.toggle('hidden', visible > 0);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const controls = [
+                document.getElementById('profile-order-search'),
+                document.getElementById('profile-method-filter'),
+                document.getElementById('profile-payment-filter')
+            ];
+            controls.forEach(el => {
+                if (!el) return;
+                el.addEventListener('input', filterProfileOrders);
+                el.addEventListener('change', filterProfileOrders);
+            });
+            filterProfileOrders();
+        });
+    </script>
 </body>
 
 </html>

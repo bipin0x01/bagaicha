@@ -103,17 +103,36 @@ if ($product_count === 0) {
 
 $orders_schema_check = $db->query('PRAGMA table_info(orders)');
 $has_payment_method = false;
+$has_payment_status = false;
 if ($orders_schema_check) {
     while ($col = $orders_schema_check->fetchArray(SQLITE3_ASSOC)) {
         if ($col['name'] === 'payment_method') {
             $has_payment_method = true;
-            break;
+        }
+        if ($col['name'] === 'payment_status') {
+            $has_payment_status = true;
         }
     }
 }
 if (!$has_payment_method) {
     $db->exec("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'esewa'");
 }
+if (!$has_payment_status) {
+    $db->exec("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'pending'");
+}
+
+// Backfill payment_status for existing rows
+$db->exec("
+    UPDATE orders
+    SET payment_status = CASE
+        WHEN payment_method = 'esewa' AND status = 'completed' THEN 'paid'
+        WHEN payment_method = 'esewa' AND status IN ('failed', 'cancelled') THEN 'failed'
+        WHEN payment_method = 'cod' AND status = 'completed' THEN 'paid'
+        WHEN payment_method = 'cod' AND status = 'cancelled' THEN 'cancelled'
+        ELSE COALESCE(payment_status, 'pending')
+    END
+    WHERE payment_status IS NULL OR payment_status = ''
+");
 
 $admin_check = $db->querySingle("SELECT COUNT(*) FROM users WHERE email = 'admin@bagaicha.com'");
 if ($admin_check === 0) {

@@ -15,8 +15,8 @@ if (isset($_GET['data'])) {
     if ($response && isset($response['transaction_uuid'])) {
         $transaction_uuid = $response['transaction_uuid'];
         
-        // Update database order to failed
-        $stmt = $db->prepare("UPDATE orders SET status = 'failed' WHERE transaction_uuid = :uuid AND status = 'pending'");
+        // Update database order to failed payment
+        $stmt = $db->prepare("UPDATE orders SET status = 'failed', payment_status = 'failed' WHERE transaction_uuid = :uuid AND status = 'pending'");
         $stmt->bindValue(':uuid', $transaction_uuid, SQLITE3_TEXT);
         $stmt->execute();
     }

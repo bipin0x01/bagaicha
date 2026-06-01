@@ -110,7 +110,7 @@ if ($items_res) {
                 <div class="text-left sm:text-right">
                     <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Receipt Invoice</span>
                     <strong class="text-sm font-mono text-gray-700 block max-w-[200px] truncate" title="<?php echo htmlspecialchars($order['transaction_uuid']); ?>">#<?php echo htmlspecialchars(substr($order['transaction_uuid'], 0, 16)); ?></strong>
-                    <span class="text-xs text-gray-400 font-medium block mt-1"><?php echo date('F d, Y - h:i A', strtotime($order['created_at'])); ?></span>
+                    <span class="text-xs text-gray-400 font-medium block mt-1"><?php echo format_utc_datetime($order['created_at'], 'F d, Y - h:i A'); ?></span>
                 </div>
             </div>
 
@@ -127,7 +127,22 @@ if ($items_res) {
                     <span class="text-xs text-gray-500 block font-medium">Destination: <strong class="text-gray-700 font-bold"><?php echo htmlspecialchars($order['address']); ?></strong></span>
                     <span class="text-xs text-gray-500 block mt-1.5 font-medium">Gateway: <strong class="text-gray-700 font-bold uppercase"><?php echo htmlspecialchars($order['payment_method']); ?></strong></span>
                     
-                    <div class="mt-3 flex md:justify-end">
+                    <div class="mt-3 flex flex-wrap gap-2 md:justify-end">
+                        <?php
+                            $payment_status = $order['payment_status'] ?? 'pending';
+                            if ($payment_status === 'paid') {
+                                $payment_badge_class = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                            } elseif ($payment_status === 'failed') {
+                                $payment_badge_class = 'bg-rose-50 text-rose-700 border-rose-100';
+                            } elseif ($payment_status === 'cancelled') {
+                                $payment_badge_class = 'bg-slate-100 text-slate-600 border-slate-200';
+                            } else {
+                                $payment_badge_class = 'bg-amber-50 text-amber-700 border-amber-100';
+                            }
+                        ?>
+                        <span class="inline-block px-3 py-1 border text-[10px] font-extrabold rounded-full uppercase tracking-wider <?php echo $payment_badge_class; ?>">
+                            Payment: <?php echo htmlspecialchars($payment_status); ?>
+                        </span>
                         <?php 
                             $status = $order['status'];
                             if ($status === 'completed') {
@@ -141,7 +156,7 @@ if ($items_res) {
                             }
                         ?>
                         <span class="inline-block px-3 py-1 border text-[10px] font-extrabold rounded-full uppercase tracking-wider <?php echo $badge_class; ?>">
-                            Status: <?php echo htmlspecialchars($status); ?>
+                            Order: <?php echo htmlspecialchars($status); ?>
                         </span>
                     </div>
                 </div>
@@ -204,7 +219,7 @@ if ($items_res) {
                         <span class="text-emerald-600 font-bold uppercase tracking-wider">Included</span>
                     </div>
                     <div class="flex justify-between items-center border-t border-gray-200 pt-4 text-gray-850 font-black text-sm md:text-base">
-                        <span>Total Paid Amount</span>
+                        <span><?php echo (($order['payment_status'] ?? 'pending') === 'paid') ? 'Total Paid Amount' : 'Total Order Amount'; ?></span>
                         <span class="text-primary text-base md:text-lg font-mono">Rs. <?php echo number_format($order['total_amount'], 2); ?></span>
                     </div>
                 </div>

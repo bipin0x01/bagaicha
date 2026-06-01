@@ -157,8 +157,8 @@ if ($is_admin && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $order_id = (int)$_POST['order_id'];
         $new_status = trim($_POST['status']);
         
-        // 1. Fetch current status of this order
-        $chk_stmt = $db->prepare("SELECT status FROM orders WHERE id = :id");
+        // 1. Fetch current status/payment metadata of this order
+        $chk_stmt = $db->prepare("SELECT status, payment_method, payment_status FROM orders WHERE id = :id");
         $chk_stmt->bindValue(':id', $order_id, SQLITE3_INTEGER);
         $chk_res = $chk_stmt->execute();
         $chk_row = $chk_res ? $chk_res->fetchArray(SQLITE3_ASSOC) : null;
@@ -184,7 +184,17 @@ if ($is_admin && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if ($is_valid) {
-                $stmt = $db->prepare("UPDATE orders SET status = :status WHERE id = :id");
+                $stmt = $db->prepare("
+                    UPDATE orders
+                    SET status = :status,
+                        payment_status = CASE
+                            WHEN :status = 'failed' THEN 'failed'
+                            WHEN :status = 'cancelled' AND payment_status != 'paid' THEN 'cancelled'
+                            WHEN :status = 'completed' AND payment_method = 'cod' AND payment_status = 'pending' THEN 'paid'
+                            ELSE payment_status
+                        END
+                    WHERE id = :id
+                ");
                 $stmt->bindValue(':status', $new_status, SQLITE3_TEXT);
                 $stmt->bindValue(':id', $order_id, SQLITE3_INTEGER);
                 
@@ -215,9 +225,9 @@ if ($is_admin) {
     // 1. Calculate Stats
     $stats['total_products'] = $db->querySingle("SELECT COUNT(*) FROM products") ?: 0;
     $stats['total_orders'] = $db->querySingle("SELECT COUNT(*) FROM orders") ?: 0;
-    $stats['revenue'] = $db->querySingle("SELECT SUM(total_amount) FROM orders WHERE status = 'completed'") ?: 0.00;
-    $stats['revenue_cod'] = $db->querySingle("SELECT SUM(total_amount) FROM orders WHERE payment_method = 'cod'") ?: 0.00;
-    $stats['revenue_esewa'] = $db->querySingle("SELECT SUM(total_amount) FROM orders WHERE payment_method = 'esewa' AND status = 'completed'") ?: 0.00;
+    $stats['revenue'] = $db->querySingle("SELECT SUM(total_amount) FROM orders WHERE payment_status = 'paid'") ?: 0.00;
+    $stats['revenue_cod'] = $db->querySingle("SELECT SUM(total_amount) FROM orders WHERE payment_method = 'cod' AND payment_status = 'paid'") ?: 0.00;
+    $stats['revenue_esewa'] = $db->querySingle("SELECT SUM(total_amount) FROM orders WHERE payment_method = 'esewa' AND payment_status = 'paid'") ?: 0.00;
     
     // 2. Get Products List
     $prod_res = $db->query("SELECT * FROM products ORDER BY id DESC");
@@ -316,37 +326,32 @@ if ($is_admin) {
                         <span class="text-primary">B</span>agaicha Admin
                     </div>
                     
-                    <div class="px-6 py-5 border-b border-gray-800/50 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1 overflow-hidden shrink-0">
-                            <img src="/assets/img/misc/user.png" alt="Admin" onerror="this.src='https://icons.iconarchive.com/icons/fa-zen/office/128/User-icon.png'" class="w-full h-full object-contain">
-                        </div>
-                        <div>
-                            <div class="text-xs font-bold text-white">Admin Dashboard</div>
-                            <div class="text-[10px] text-gray-500 font-medium mt-0.5">System Administrator</div>
-                        </div>
-                    </div>
-                    
                     <ul class="px-4 py-6 space-y-2 list-none">
                         <li>
-                            <button class="sidebar-tab-btn w-full px-5 py-3 text-left text-sm font-bold text-white bg-primary rounded-xl flex items-center gap-3 shadow-md shadow-primary/20 transition-all duration-150 cursor-pointer active" onclick="switchTab('tab-dashboard')">Overview</button>
+                            <button class="sidebar-tab-btn w-full px-5 py-3 text-left text-sm font-bold text-white bg-primary rounded-xl flex items-center gap-3 shadow-md shadow-primary/20 transition-all duration-150 cursor-pointer active" onclick="switchTab('tab-dashboard')">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v8m0-8L5 10m14 0l-5-5"></path></svg>
+                                <span>Overview</span>
+                            </button>
                         </li>
                         <li>
-                            <button class="sidebar-tab-btn w-full px-5 py-3 text-left text-sm font-semibold text-white/70 rounded-xl flex items-center gap-3 hover:bg-white/5 hover:text-white transition-all duration-150 cursor-pointer" onclick="switchTab('tab-products')">Inventory Manager</button>
+                            <button class="sidebar-tab-btn w-full px-5 py-3 text-left text-sm font-semibold text-white/70 rounded-xl flex items-center gap-3 hover:bg-white/5 hover:text-white transition-all duration-150 cursor-pointer" onclick="switchTab('tab-products')">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2h-3V3H9v2H6a2 2 0 00-2 2v6m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4"></path></svg>
+                                <span>Inventory</span>
+                            </button>
                         </li>
                         <li>
-                            <button class="sidebar-tab-btn w-full px-5 py-3 text-left text-sm font-semibold text-white/70 rounded-xl flex items-center gap-3 hover:bg-white/5 hover:text-white transition-all duration-150 cursor-pointer" onclick="switchTab('tab-orders')">Purchase Orders</button>
+                            <button class="sidebar-tab-btn w-full px-5 py-3 text-left text-sm font-semibold text-white/70 rounded-xl flex items-center gap-3 hover:bg-white/5 hover:text-white transition-all duration-150 cursor-pointer" onclick="switchTab('tab-orders')">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 4h6m-7 4h8m-9 4h10M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
+                                <span>Orders</span>
+                            </button>
                         </li>
                     </ul>
                 </div>
 
                 <div class="px-4 py-6 border-t border-gray-800/50 space-y-3">
-                    <a href="/shop.php" class="text-xs font-bold text-gray-400 hover:text-white flex items-center gap-2 px-2 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                        Go to Shop Front
-                    </a>
-                    <a href="/logout.php" class="flex items-center justify-center gap-2 py-3 bg-red-500/10 hover:bg-red-500/25 border border-red-500/25 text-red-400 hover:text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer">
+                    <a href="/logout.php" class="flex items-center justify-center gap-2 py-3 bg-red-500/10 hover:bg-red-500/25 border border-red-500/25 text-red-400 hover:text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer" data-confirm-logout="true">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        Secure Logout
+                        Logout
                     </a>
                 </div>
             </aside>
@@ -357,11 +362,33 @@ if ($is_admin) {
                 <!-- Welcome header bar -->
                 <div class="flex justify-between items-center bg-white border border-gray-100 rounded-2xl px-8 py-6 mb-8 shadow-sm">
                     <div>
-                        <h1 class="text-2xl font-extrabold text-gray-800">Control Center</h1>
-                        <p class="text-xs text-gray-500 mt-1">Welcome back, <strong>Admin</strong>. Manage inventory, view logs, and update order statuses.</p>
+                        <h1 class="text-2xl font-extrabold text-gray-800">Admin Dashboard</h1>
+                        <p class="text-xs text-gray-500 mt-1">Welcome back, <strong><?php echo htmlspecialchars(trim(($_SESSION['fname'] ?? 'Admin') . ' ' . ($_SESSION['lname'] ?? ''))); ?></strong>. Manage inventory, view logs, and update order statuses.</p>
                     </div>
-                    <div class="text-xs font-bold text-gray-500 bg-gray-50 border border-gray-100 px-4 py-2 rounded-xl">
-                        <?php echo date('d M Y'); ?>
+                    <div class="bg-gradient-to-br from-white to-gray-50 border border-gray-100 rounded-2xl px-4 py-3 min-w-[290px] shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <div class="w-11 h-11 rounded-xl bg-primary/12 border border-primary/20 text-primary font-extrabold text-sm flex items-center justify-center shrink-0">
+                                <?php
+                                    $admin_fname = $_SESSION['fname'] ?? 'Admin';
+                                    $admin_lname = $_SESSION['lname'] ?? '';
+                                    $admin_name = trim($admin_fname . ' ' . $admin_lname);
+                                    $initials = strtoupper(substr($admin_fname, 0, 1) . substr($admin_lname, 0, 1));
+                                    if ($initials === '') $initials = 'AD';
+                                ?>
+                                <?php echo htmlspecialchars($initials); ?>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="text-sm font-extrabold text-gray-800 truncate"><?php echo htmlspecialchars($admin_name); ?></p>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Admin
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-gray-500 font-medium truncate"><?php echo htmlspecialchars($_SESSION['email'] ?? 'admin@bagaicha.com'); ?></p>
+                                <p class="text-[10px] text-gray-400 mt-1.5">Local time: <?php echo local_now('d M Y, h:i A'); ?></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -374,17 +401,17 @@ if ($is_admin) {
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white border border-gray-100 border-t-4 border-t-primary rounded-2xl p-6 shadow-sm">
+                        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                             <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3">Cataloged Bonsais</span>
                             <div class="text-3xl font-extrabold text-gray-850 leading-none mb-1.5"><?php echo $stats['total_products']; ?></div>
                             <span class="text-xs text-gray-400 font-medium">active varieties</span>
                         </div>
-                        <div class="bg-white border border-gray-100 border-t-4 border-t-sky-500 rounded-2xl p-6 shadow-sm">
+                        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                             <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3">Customer Orders</span>
                             <div class="text-3xl font-extrabold text-gray-850 leading-none mb-1.5"><?php echo $stats['total_orders']; ?></div>
                             <span class="text-xs text-gray-400 font-medium">total transactions</span>
                         </div>
-                        <div class="bg-white border border-gray-100 border-t-4 border-t-emerald-500 rounded-2xl p-6 shadow-sm">
+                        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                             <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3">Cleared Revenue</span>
                             <div class="text-2xl font-extrabold text-gray-850 leading-none mb-1.5">Rs. <?php echo number_format($stats['revenue'], 2); ?></div>
                             <span class="text-xs text-gray-400 font-medium">completed orders only</span>
@@ -416,7 +443,7 @@ if ($is_admin) {
                     </div>
                 </div>
 
-                <!-- TAB 2: INVENTORY MANAGER -->
+                <!-- TAB 2: INVENTORY -->
                 <div id="tab-products" class="admin-tab-content bg-white border border-gray-100 rounded-3xl p-8 shadow-sm hidden space-y-6">
 
                     <!-- Tab header row -->
@@ -426,6 +453,22 @@ if ($is_admin) {
                             <p class="text-xs text-gray-400 mt-0.5 font-medium"><?php echo count($products); ?> varieties cataloged</p>
                         </div>
                         <button onclick="openProductModal()" class="bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-5 py-2.5 transition-colors cursor-pointer shadow-sm hover:shadow-md">+ New Product</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input id="admin-product-search" type="text" placeholder="Search product name..." class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700">
+                        <select id="admin-product-price-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="all">All price ranges</option>
+                            <option value="0-3000">Up to Rs. 3,000</option>
+                            <option value="3000-7000">Rs. 3,000 - 7,000</option>
+                            <option value="7000+">Above Rs. 7,000</option>
+                        </select>
+                        <select id="admin-product-sort" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="default">Sort: Default</option>
+                            <option value="name-asc">Name A-Z</option>
+                            <option value="price-asc">Price Low-High</option>
+                            <option value="price-desc">Price High-Low</option>
+                        </select>
                     </div>
 
                     <!-- Full-width inventory table -->
@@ -441,7 +484,7 @@ if ($is_admin) {
                                     <th class="px-6 py-4 text-center w-24">Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 bg-white">
+                            <tbody id="admin-products-tbody" class="divide-y divide-gray-100 bg-white">
                                 <?php if (empty($products)): ?>
                                     <tr>
                                         <td colspan="6" class="text-center text-gray-400 py-16">
@@ -451,7 +494,7 @@ if ($is_admin) {
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($products as $p): ?>
-                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <tr class="admin-product-row hover:bg-gray-50/50 transition-colors" data-name="<?php echo htmlspecialchars(strtolower($p['name']), ENT_QUOTES, 'UTF-8'); ?>" data-price="<?php echo (float)$p['price']; ?>">
                                             <td class="px-6 py-4">
                                                 <div class="w-12 h-12 rounded-lg border border-gray-100 overflow-hidden shrink-0">
                                                     <img src="<?php echo htmlspecialchars($p['image_url']); ?>" alt="product" class="w-full h-full object-cover">
@@ -476,7 +519,7 @@ if ($is_admin) {
                                                     <button onclick="openEditProductModal(<?php echo htmlspecialchars(json_encode($p)); ?>)" class="bg-purple-50 hover:bg-primary border border-purple-100 hover:border-primary text-primary hover:text-white font-semibold rounded-lg px-3 py-1.5 text-xs transition-colors cursor-pointer" type="button">
                                                         Edit
                                                     </button>
-                                                    <form action="/admin.php" method="POST" onsubmit="return confirm('Delete \'<?php echo addslashes(htmlspecialchars($p['name'])); ?>\'? This cannot be undone.');" class="m-0 inline">
+                                                    <form action="/admin.php" method="POST" data-confirm-message="Delete '<?php echo addslashes(htmlspecialchars($p['name'])); ?>'? This cannot be undone." class="m-0 inline">
                                                         <input type="hidden" name="delete_product" value="1">
                                                         <input type="hidden" name="product_id" value="<?php echo $p['id']; ?>">
                                                         <button type="submit" class="bg-red-50 hover:bg-red-500 border border-red-100 hover:border-red-500 text-red-600 hover:text-white font-semibold rounded-lg px-3 py-1.5 text-xs transition-colors cursor-pointer">
@@ -563,7 +606,31 @@ if ($is_admin) {
                 <!-- TAB 3: MANAGE ORDERS -->
                 <div id="tab-orders" class="admin-tab-content bg-white border border-gray-100 rounded-3xl p-8 shadow-sm hidden space-y-6">
                     <div>
-                        <h3 class="text-base font-bold text-gray-850 border-b border-gray-100 pb-3">Purchase Log</h3>
+                        <h3 class="text-base font-bold text-gray-850 border-b border-gray-100 pb-3">Orders</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <input id="admin-order-search" type="text" placeholder="Search customer, email, ref..." class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 lg:col-span-2">
+                        <select id="admin-order-method-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="all">All methods</option>
+                            <option value="esewa">eSewa</option>
+                            <option value="cod">COD</option>
+                        </select>
+                        <select id="admin-order-payment-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="all">All payment</option>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                            <option value="failed">Failed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <select id="admin-order-status-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="all">All order statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
                     </div>
                     
                     <div class="border border-gray-100 rounded-2xl overflow-hidden shadow-inner bg-gray-50/20">
@@ -575,18 +642,25 @@ if ($is_admin) {
                                     <th class="px-6 py-4">Reference ID</th>
                                     <th class="px-6 py-4">Total Payable</th>
                                     <th class="px-6 py-4">Method</th>
+                                    <th class="px-6 py-4">Payment</th>
                                     <th class="px-6 py-4">Status</th>
-                                    <th class="px-6 py-4">Update Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 bg-white">
+                            <tbody id="admin-orders-tbody" class="divide-y divide-gray-100 bg-white">
                                 <?php if (empty($orders)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center text-gray-400 py-16">No customer transactions logged in SQLite.</td>
+                                        <td colspan="6" class="text-center text-gray-400 py-16">No customer transactions logged in SQLite.</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($orders as $o): ?>
-                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <tr class="admin-order-row hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                            data-customer="<?php echo htmlspecialchars(strtolower($o['fname'] . ' ' . $o['lname']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-email="<?php echo htmlspecialchars(strtolower($o['email']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-reference="<?php echo htmlspecialchars(strtolower($o['transaction_uuid']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-method="<?php echo htmlspecialchars(strtolower($o['payment_method']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-payment="<?php echo htmlspecialchars(strtolower($o['payment_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-status="<?php echo htmlspecialchars(strtolower($o['status']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            onclick="showAdminOrderDetails(<?php echo $o['id']; ?>)">
                                             <td class="px-6 py-4">
                                                 <strong class="text-gray-800 font-bold block"><?php echo htmlspecialchars($o['fname'] . ' ' . $o['lname']); ?></strong>
                                                 <span class="text-gray-400 text-[10px] block mt-0.5"><?php echo htmlspecialchars($o['email']); ?></span>
@@ -594,13 +668,11 @@ if ($is_admin) {
                                             </td>
                                             <td class="px-6 py-4 text-xs text-gray-600">
                                                 <span><?php echo htmlspecialchars($o['address']); ?></span><br>
-                                                <span class="text-[10px] text-gray-400 mt-1 block font-medium"><?php echo date('M d, Y - h:i A', strtotime($o['created_at'])); ?></span>
+                                                <span class="text-[10px] text-gray-400 mt-1 block font-medium"><?php echo format_utc_datetime($o['created_at'], 'M d, Y - h:i A'); ?></span>
                                             </td>
                                             <td class="px-6 py-4">
                                                 <span class="font-mono text-[10px] text-gray-500 block truncate w-24" title="<?php echo htmlspecialchars($o['transaction_uuid']); ?>"><?php echo htmlspecialchars($o['transaction_uuid']); ?></span>
-                                                <button onclick="showAdminOrderDetails(<?php echo $o['id']; ?>)" class="text-[10px] font-bold text-primary hover:text-primary-dark hover:underline flex items-center gap-0.5 mt-1 transition-colors w-fit bg-transparent border-none cursor-pointer p-0">
-                                                    View Order
-                                                </button>
+                                                <span class="text-[10px] text-primary font-semibold mt-1 inline-block">Click row to view</span>
                                             </td>
                                             <td class="px-6 py-4">
                                                 <strong class="text-primary font-bold text-xs">Rs. <?php echo htmlspecialchars($o['total_amount']); ?></strong><br>
@@ -610,6 +682,18 @@ if ($is_admin) {
                                                 <?php $is_cod = ($o['payment_method'] === 'cod'); ?>
                                                 <span class="inline-block px-2.5 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider <?php echo $is_cod ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'; ?>">
                                                     <?php echo htmlspecialchars($is_cod ? 'COD' : 'eSewa'); ?>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <?php
+                                                    $payment_status = $o['payment_status'] ?? 'pending';
+                                                    $payment_badge = 'bg-amber-50 text-amber-700 border-amber-100';
+                                                    if ($payment_status === 'paid') $payment_badge = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                                                    elseif ($payment_status === 'failed') $payment_badge = 'bg-rose-50 text-rose-700 border-rose-100';
+                                                    elseif ($payment_status === 'cancelled') $payment_badge = 'bg-slate-100 text-slate-600 border-slate-200';
+                                                ?>
+                                                <span class="inline-block px-2.5 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider <?php echo $payment_badge; ?>">
+                                                    <?php echo htmlspecialchars($payment_status); ?>
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4">
@@ -629,34 +713,6 @@ if ($is_admin) {
                                                     <?php echo htmlspecialchars($status); ?>
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4">
-                                                <?php if ($status === 'completed' || $status === 'failed' || $status === 'cancelled'): ?>
-                                                    <span class="text-xs text-gray-400 font-semibold italic flex items-center gap-1 select-none">
-                                                        <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                                        Locked
-                                                    </span>
-                                                <?php else: ?>
-                                                    <form action="/admin.php" method="POST" class="m-0 flex gap-2 items-center">
-                                                        <input type="hidden" name="update_order_status" value="1">
-                                                        <input type="hidden" name="order_id" value="<?php echo $o['id']; ?>">
-                                                        <select name="status" class="bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-2.5 py-1.5 text-xs text-gray-700 cursor-pointer w-28">
-                                                            <?php if ($status === 'pending'): ?>
-                                                                <option value="pending" selected>Pending</option>
-                                                                <option value="processing">Processing</option>
-                                                                <option value="completed">Completed</option>
-                                                                <option value="failed">Failed</option>
-                                                                <option value="cancelled">Cancelled</option>
-                                                            <?php elseif ($status === 'processing'): ?>
-                                                                <option value="processing" selected>Processing</option>
-                                                                <option value="completed">Completed</option>
-                                                                <option value="failed">Failed</option>
-                                                                <option value="cancelled">Cancelled</option>
-                                                            <?php endif; ?>
-                                                        </select>
-                                                        <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-bold rounded-xl px-3 py-1.5 text-xs transition-colors cursor-pointer">Set</button>
-                                                    </form>
-                                                <?php endif; ?>
-                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -674,10 +730,12 @@ if ($is_admin) {
                             </button>
                             <h3 class="text-lg font-bold text-gray-850 mt-3" id="admin-detail-title">Order Details</h3>
                         </div>
-                        <a href="#" id="admin-detail-invoice-link" target="_blank" class="bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-4 py-2 transition-colors flex items-center gap-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                            Print Invoice
-                        </a>
+                        <div class="flex items-center gap-2.5" id="admin-detail-actions">
+                            <a href="#" id="admin-detail-invoice-link" target="_blank" class="bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-4 py-2 transition-colors flex items-center gap-1.5 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                Print Invoice
+                            </a>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -708,13 +766,16 @@ if ($is_admin) {
                                 <span id="admin-detail-method" class="inline-block px-2 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider"></span>
                             </div>
                             <div>
+                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Payment Status</span>
+                                <span id="admin-detail-payment-badge" class="inline-block px-2.5 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider"></span>
+                            </div>
+                            <div>
                                 <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Order Status</span>
                                 <span id="admin-detail-status-badge" class="inline-block px-2.5 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider"></span>
                             </div>
                             
-                            <!-- Dynamic transition selector -->
-                            <div class="border-t border-gray-200 pt-4" id="admin-detail-status-form-container">
-                                <!-- Populated dynamically by JS -->
+                            <div class="border-t border-gray-200 pt-4 text-[11px] text-gray-500" id="admin-detail-status-form-container">
+                                Update order status from the action controls beside Print Invoice.
                             </div>
                         </div>
                         
@@ -765,6 +826,9 @@ if ($is_admin) {
     <?php endif; ?>
     <script>
         // Tab toggler scripts
+        const ADMIN_TAB_STORAGE_KEY = 'bagaicha_admin_active_tab';
+        const PERSISTENT_TABS = new Set(['tab-dashboard', 'tab-products', 'tab-orders']);
+
         function switchTab(tabId) {
             // Remove active classes
             document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
@@ -782,7 +846,125 @@ if ($is_admin) {
             if (targetContent) {
                 targetContent.classList.remove('hidden');
             }
+
+            // Persist only primary sidebar tabs.
+            if (PERSISTENT_TABS.has(tabId)) {
+                localStorage.setItem(ADMIN_TAB_STORAGE_KEY, tabId);
+            } else if (tabId === 'tab-order-details') {
+                // Details view is contextual; restore Orders tab on reload.
+                localStorage.setItem(ADMIN_TAB_STORAGE_KEY, 'tab-orders');
+            }
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTab = localStorage.getItem(ADMIN_TAB_STORAGE_KEY);
+            if (savedTab && PERSISTENT_TABS.has(savedTab) && document.getElementById(savedTab)) {
+                switchTab(savedTab);
+            } else {
+                switchTab('tab-dashboard');
+            }
+        });
+
+        function filterAdminProducts() {
+            const search = (document.getElementById('admin-product-search')?.value || '').trim().toLowerCase();
+            const priceBand = document.getElementById('admin-product-price-filter')?.value || 'all';
+            const sort = document.getElementById('admin-product-sort')?.value || 'default';
+            const tbody = document.getElementById('admin-products-tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('.admin-product-row'));
+            let visible = 0;
+
+            rows.sort((a, b) => {
+                if (sort === 'name-asc') return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+                if (sort === 'price-asc') return parseFloat(a.dataset.price || '0') - parseFloat(b.dataset.price || '0');
+                if (sort === 'price-desc') return parseFloat(b.dataset.price || '0') - parseFloat(a.dataset.price || '0');
+                return 0;
+            }).forEach(row => tbody.appendChild(row));
+
+            rows.forEach(row => {
+                const name = row.dataset.name || '';
+                const price = parseFloat(row.dataset.price || '0');
+                const matchesSearch = !search || name.includes(search);
+
+                let matchesPrice = true;
+                if (priceBand === '0-3000') matchesPrice = price <= 3000;
+                else if (priceBand === '3000-7000') matchesPrice = price > 3000 && price <= 7000;
+                else if (priceBand === '7000+') matchesPrice = price > 7000;
+
+                const show = matchesSearch && matchesPrice;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            let emptyRow = document.getElementById('admin-products-empty-filter-row');
+            if (!emptyRow) {
+                emptyRow = document.createElement('tr');
+                emptyRow.id = 'admin-products-empty-filter-row';
+                emptyRow.innerHTML = '<td colspan="6" class="text-center text-gray-400 py-10 text-xs">No products match current filters.</td>';
+                emptyRow.style.display = 'none';
+                tbody.appendChild(emptyRow);
+            }
+            emptyRow.style.display = visible === 0 ? '' : 'none';
+        }
+
+        function filterAdminOrders() {
+            const search = (document.getElementById('admin-order-search')?.value || '').trim().toLowerCase();
+            const method = document.getElementById('admin-order-method-filter')?.value || 'all';
+            const payment = document.getElementById('admin-order-payment-filter')?.value || 'all';
+            const status = document.getElementById('admin-order-status-filter')?.value || 'all';
+            const tbody = document.getElementById('admin-orders-tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('.admin-order-row'));
+            let visible = 0;
+
+            rows.forEach(row => {
+                const searchable = `${row.dataset.customer || ''} ${row.dataset.email || ''} ${row.dataset.reference || ''}`;
+                const matchesSearch = !search || searchable.includes(search);
+                const matchesMethod = method === 'all' || (row.dataset.method || '') === method;
+                const matchesPayment = payment === 'all' || (row.dataset.payment || '') === payment;
+                const matchesStatus = status === 'all' || (row.dataset.status || '') === status;
+                const show = matchesSearch && matchesMethod && matchesPayment && matchesStatus;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            let emptyRow = document.getElementById('admin-orders-empty-filter-row');
+            if (!emptyRow) {
+                emptyRow = document.createElement('tr');
+                emptyRow.id = 'admin-orders-empty-filter-row';
+                emptyRow.innerHTML = '<td colspan="7" class="text-center text-gray-400 py-10 text-xs">No orders match current filters.</td>';
+                emptyRow.style.display = 'none';
+                tbody.appendChild(emptyRow);
+            }
+            emptyRow.style.display = visible === 0 ? '' : 'none';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const productSearch = document.getElementById('admin-product-search');
+            const productPrice = document.getElementById('admin-product-price-filter');
+            const productSort = document.getElementById('admin-product-sort');
+            const orderSearch = document.getElementById('admin-order-search');
+            const orderMethod = document.getElementById('admin-order-method-filter');
+            const orderPayment = document.getElementById('admin-order-payment-filter');
+            const orderStatus = document.getElementById('admin-order-status-filter');
+
+            [productSearch, productPrice, productSort].forEach(el => {
+                if (!el) return;
+                el.addEventListener('input', filterAdminProducts);
+                el.addEventListener('change', filterAdminProducts);
+            });
+
+            [orderSearch, orderMethod, orderPayment, orderStatus].forEach(el => {
+                if (!el) return;
+                el.addEventListener('input', filterAdminOrders);
+                el.addEventListener('change', filterAdminOrders);
+            });
+
+            filterAdminProducts();
+            filterAdminOrders();
+        });
 
         // ── Product Modal ─────────────────────────────────────────────────
         function openProductModal() {
@@ -912,11 +1094,13 @@ if ($is_admin) {
             document.getElementById('admin-detail-uuid').textContent = order.transaction_uuid;
             document.getElementById('admin-detail-uuid').title = order.transaction_uuid;
             
-            const dateObj = new Date(order.created_at);
-            document.getElementById('admin-detail-date').textContent = dateObj.toLocaleString('en-US', {
+            const utcIso = (order.created_at || '').replace(' ', 'T') + 'Z';
+            const dateObj = new Date(utcIso);
+            document.getElementById('admin-detail-date').textContent = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Kathmandu',
                 month: 'short', day: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit', hour12: true
-            });
+            }).format(dateObj);
 
             document.getElementById('admin-detail-name').textContent = `${order.fname} ${order.lname}`;
             document.getElementById('admin-detail-contact').innerHTML = `Email: ${order.email}<br>Phone: ${order.phone}`;
@@ -928,6 +1112,15 @@ if ($is_admin) {
             methodEl.className = isCod 
                 ? 'inline-block px-2 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider bg-amber-50 text-amber-700 border-amber-100'
                 : 'inline-block px-2 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider bg-emerald-50 text-emerald-700 border-emerald-100';
+
+            const paymentBadge = document.getElementById('admin-detail-payment-badge');
+            const paymentStatus = (order.payment_status || 'pending').toLowerCase();
+            paymentBadge.textContent = paymentStatus;
+            let paymentBadgeClass = 'bg-amber-50 text-amber-700 border-amber-100';
+            if (paymentStatus === 'paid') paymentBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+            else if (paymentStatus === 'failed') paymentBadgeClass = 'bg-rose-50 text-rose-700 border-rose-100';
+            else if (paymentStatus === 'cancelled') paymentBadgeClass = 'bg-slate-100 text-slate-600 border-slate-200';
+            paymentBadge.className = `inline-block px-2.5 py-0.5 border text-[9px] font-bold rounded-md uppercase tracking-wider ${paymentBadgeClass}`;
 
             const statusBadge = document.getElementById('admin-detail-status-badge');
             statusBadge.textContent = order.status;
@@ -972,43 +1165,75 @@ if ($is_admin) {
             document.getElementById('admin-detail-total').textContent = totalVal;
 
             const formContainer = document.getElementById('admin-detail-status-form-container');
+            const actionsContainer = document.getElementById('admin-detail-actions');
+
+            if (!actionsContainer) return;
+
+            const existingStatusActions = document.getElementById('admin-detail-status-actions');
+            if (existingStatusActions) existingStatusActions.remove();
+
             if (order.status === 'completed' || order.status === 'failed' || order.status === 'cancelled') {
                 formContainer.innerHTML = `
-                    <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Update Delivery Status</span>
                     <span class="text-xs text-gray-400 font-semibold italic flex items-center gap-1 select-none">
                         <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        Finalized State Locked
+                        Finalized state. No further transitions allowed.
                     </span>
                 `;
             } else {
                 formContainer.innerHTML = `
-                    <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Update Delivery Status</span>
-                    <form action="/admin.php" method="POST" class="m-0 flex gap-2 items-center">
+                    <span class="text-[11px] text-gray-500">Choose a new order status from the dropdown beside Print Invoice.</span>
+                `;
+
+                const statusActions = document.createElement('div');
+                statusActions.id = 'admin-detail-status-actions';
+                statusActions.className = 'flex items-center gap-2';
+
+                const transitionTargets = order.status === 'pending'
+                    ? ['processing', 'completed', 'failed']
+                    : ['completed', 'failed'];
+
+                const optionsHtml = transitionTargets
+                    .map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`)
+                    .join('');
+
+                statusActions.innerHTML = `
+                    <form action="/admin.php" method="POST" class="m-0 flex gap-2 items-center" data-confirm-message="Apply this status change to the order?">
                         <input type="hidden" name="update_order_status" value="1">
-                        <input type="hidden" name="order_id" id="admin-detail-form-order-id" value="${order.id}">
-                        <select name="status" id="admin-detail-form-status-select" class="bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-2.5 py-1.5 text-xs text-gray-700 cursor-pointer w-28">
-                        </select>
-                        <button type="submit" class="bg-primary hover:bg-primary-dark text-white font-bold rounded-xl px-3 py-1.5 text-xs transition-colors cursor-pointer">Set</button>
+                        <input type="hidden" name="order_id" value="${order.id}">
+                        <div class="relative">
+                            <select
+                                name="status"
+                                class="appearance-none bg-white border border-gray-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-gray-700 cursor-pointer min-w-[9rem] shadow-sm transition-all"
+                                onchange="if(this.value){ this.form.requestSubmit(); }"
+                            >
+                            <option value="" selected disabled>Update status</option>
+                            ${optionsHtml}
+                            </select>
+                            <span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </span>
+                        </div>
                     </form>
                 `;
-                
-                const select = document.getElementById('admin-detail-form-status-select');
-                if (order.status === 'pending') {
-                    select.innerHTML = `
-                        <option value="pending" selected>Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="completed">Completed</option>
-                        <option value="failed">Failed</option>
-                        <option value="cancelled">Cancelled</option>
+
+                if (order.status === 'pending' || order.status === 'processing') {
+                    const cancelForm = document.createElement('form');
+                    cancelForm.action = '/admin.php';
+                    cancelForm.method = 'POST';
+                    cancelForm.className = 'm-0';
+                    cancelForm.setAttribute('data-confirm-message', 'Cancel this order? This action cannot be undone.');
+                    cancelForm.innerHTML = `
+                        <input type="hidden" name="update_order_status" value="1">
+                        <input type="hidden" name="order_id" value="${order.id}">
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 text-rose-600 hover:text-white font-bold rounded-xl px-3 py-2 text-xs transition-colors cursor-pointer">Cancel Order</button>
                     `;
-                } else if (order.status === 'processing') {
-                    select.innerHTML = `
-                        <option value="processing" selected>Processing</option>
-                        <option value="completed">Completed</option>
-                        <option value="failed">Failed</option>
-                        <option value="cancelled">Cancelled</option>
-                    `;
+                    statusActions.appendChild(cancelForm);
                 }
+
+                actionsContainer.appendChild(statusActions);
             }
 
             switchTab('tab-order-details');

@@ -46,12 +46,13 @@ $total = count($products);
     </div>
 
     <!-- Filter / Sort Bar -->
-    <div class="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 flex justify-between items-center px-6 md:px-12 h-14 shadow-sm">
+    <div class="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-center px-6 md:px-12 py-3 md:h-14 shadow-sm gap-2">
         <div class="flex items-center gap-2.5">
             <span class="filter-tag active inline-flex items-center px-4 py-1.5 border border-primary text-xs font-bold rounded-full text-primary bg-primary-light transition-colors cursor-pointer" onclick="filterProducts('all', this)">All</span>
             <span class="filter-tag inline-flex items-center px-4 py-1.5 border border-gray-200 text-xs font-semibold text-gray-600 rounded-full hover:bg-purple-50 hover:text-primary hover:border-primary transition-colors cursor-pointer" onclick="filterProducts('sale', this)">On Sale</span>
         </div>
-        <div>
+        <div class="flex items-center gap-2 w-full md:w-auto">
+            <input id="shop-search" type="text" placeholder="Search bonsai..." class="w-full md:w-56 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary">
             <select class="sort-select text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-primary cursor-pointer" id="sort-select" onchange="sortProducts(this.value)">
                 <option value="default">Sort: Default</option>
                 <option value="price-asc">Price: Low to High</option>
@@ -132,21 +133,27 @@ $total = count($products);
     <?php require INCLUDES_PATH . '/footer.php'; ?>
     <script>
         // Filter products
+        let shopFilterType = 'all';
+
+        function applyShopFilters() {
+            const query = (document.getElementById('shop-search')?.value || '').trim().toLowerCase();
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                const matchesType = shopFilterType === 'all' || card.dataset.discount === '1';
+                const matchesQuery = !query || (card.dataset.name || '').toLowerCase().includes(query);
+                card.style.display = matchesType && matchesQuery ? '' : 'none';
+            });
+        }
+
         function filterProducts(type, el) {
+            shopFilterType = type;
             // Update active tag styled with Tailwind classes
             document.querySelectorAll('.filter-tag').forEach(t => {
                 t.className = "filter-tag inline-flex items-center px-4 py-1.5 border border-gray-200 text-xs font-semibold text-gray-600 rounded-full hover:bg-purple-50 hover:text-primary hover:border-primary transition-colors cursor-pointer";
             });
             el.className = "filter-tag inline-flex items-center px-4 py-1.5 border border-primary text-xs font-bold rounded-full text-primary bg-primary-light transition-colors cursor-pointer active";
- 
-            const cards = document.querySelectorAll('.product-card');
-            cards.forEach(card => {
-                if (type === 'all') {
-                    card.style.display = '';
-                } else if (type === 'sale') {
-                    card.style.display = card.dataset.discount === '1' ? '' : 'none';
-                }
-            });
+
+            applyShopFilters();
         }
 
         // Sort products
@@ -164,7 +171,14 @@ $total = count($products);
             });
 
             cards.forEach(card => grid.appendChild(card));
+            applyShopFilters();
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('shop-search');
+            if (searchInput) searchInput.addEventListener('input', applyShopFilters);
+            applyShopFilters();
+        });
     </script>
 </body>
 

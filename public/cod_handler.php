@@ -26,8 +26,8 @@ $total_amount = number_format($total_amount_raw, 2, '.', '');
 
 $transaction_uuid = 'cod-' . time() . '-' . rand(1000, 9999);
 
-// 1. Insert order into Database with payment_method as 'cod' and status as 'processing'
-$order_stmt = $db->prepare("INSERT INTO orders (transaction_uuid, total_amount, status, fname, lname, email, phone, address, payment_method) VALUES (:uuid, :total, 'processing', :fname, :lname, :email, :phone, :address, 'cod')");
+// 1. Insert order into Database with payment_method as 'cod' and unpaid payment status
+$order_stmt = $db->prepare("INSERT INTO orders (transaction_uuid, total_amount, status, payment_status, fname, lname, email, phone, address, payment_method) VALUES (:uuid, :total, 'processing', 'pending', :fname, :lname, :email, :phone, :address, 'cod')");
 $order_stmt->bindValue(':uuid', $transaction_uuid, SQLITE3_TEXT);
 $order_stmt->bindValue(':total', $total_amount, SQLITE3_FLOAT);
 $order_stmt->bindValue(':fname', $fname, SQLITE3_TEXT);

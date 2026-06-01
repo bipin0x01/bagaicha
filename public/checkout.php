@@ -63,7 +63,19 @@ if (isset($_SESSION['email'])) {
 
                     <div>
                         <label for="email" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email Address *</label>
-                        <input type="email" id="email" name="email" placeholder="example@gmail.com" value="<?php echo htmlspecialchars($email); ?>" required class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 transition-colors">
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="example@gmail.com"
+                            value="<?php echo htmlspecialchars($email); ?>"
+                            required
+                            <?php echo isset($_SESSION['email']) ? 'readonly aria-readonly="true"' : ''; ?>
+                            class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 transition-colors <?php echo isset($_SESSION['email']) ? 'bg-gray-50 text-gray-500 cursor-not-allowed focus:border-gray-200' : ''; ?>"
+                        >
+                        <?php if (isset($_SESSION['email'])): ?>
+                            <p class="text-[10px] text-gray-400 mt-1">Email is locked to your logged-in account.</p>
+                        <?php endif; ?>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -147,6 +159,25 @@ if (isset($_SESSION['email'])) {
             }
         }
 
+        function saveCart(cart) {
+            localStorage.setItem("bagaicha_cart", JSON.stringify(cart));
+        }
+
+        function setCheckoutItemQuantity(id, quantity) {
+            const cart = getCart();
+            const item = cart.find((entry) => entry.id === id);
+            if (!item) return;
+            item.quantity = Math.max(1, parseInt(quantity, 10) || 1);
+            saveCart(cart);
+            renderCheckoutSummary();
+        }
+
+        function removeCheckoutItem(id) {
+            const cart = getCart().filter((entry) => entry.id !== id);
+            saveCart(cart);
+            renderCheckoutSummary();
+        }
+
         function renderCheckoutSummary() {
             const listDiv = document.getElementById("checkout-items-list");
             const subtotalSpan = document.getElementById("summary-subtotal");
@@ -183,16 +214,60 @@ if (isset($_SESSION['email'])) {
                         <img src="${item.img}" alt="${item.name}" class="w-11 h-11 rounded-lg border border-gray-100 object-cover shrink-0">
                         <div>
                             <h4 class="text-xs font-bold text-gray-800 truncate w-36" title="${item.name}">${item.name}</h4>
-                            <p class="text-[10px] text-gray-400 mt-0.5">Quantity: ${item.quantity} x Rs. ${item.price}</p>
+                            <div class="mt-1 flex items-center gap-1.5">
+                                <button class="checkout-qty-minus w-5 h-5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 text-[11px] font-bold cursor-pointer" data-id="${item.id}" type="button">-</button>
+                                <input class="checkout-qty-input w-9 h-5 rounded-md border border-gray-200 text-center text-[10px] font-semibold text-gray-700" data-id="${item.id}" type="number" min="1" value="${item.quantity}">
+                                <button class="checkout-qty-plus w-5 h-5 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 text-[11px] font-bold cursor-pointer" data-id="${item.id}" type="button">+</button>
+                                <span class="text-[10px] text-gray-400 ml-1">x Rs. ${Number(item.price).toFixed(2)}</span>
+                            </div>
                         </div>
                     </div>
-                    <span class="font-semibold text-xs text-gray-700">Rs. ${itemTotal}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-xs text-gray-700">Rs. ${Number(itemTotal).toFixed(2)}</span>
+                        <button class="checkout-remove-item-btn p-1.5 rounded-md border border-red-100 text-red-500 hover:bg-red-50 transition-colors cursor-pointer" data-id="${item.id}" type="button" aria-label="Remove item">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
                 `;
                 listDiv.appendChild(itemRow);
             });
 
-            subtotalSpan.textContent = `Rs. ${total}`;
-            totalSpan.textContent = `Rs. ${total}`;
+            subtotalSpan.textContent = `Rs. ${Number(total).toFixed(2)}`;
+            totalSpan.textContent = `Rs. ${Number(total).toFixed(2)}`;
+
+            listDiv.querySelectorAll('.checkout-qty-minus').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    const item = getCart().find((entry) => entry.id === id);
+                    if (!item) return;
+                    setCheckoutItemQuantity(id, item.quantity - 1);
+                });
+            });
+
+            listDiv.querySelectorAll('.checkout-qty-plus').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    const item = getCart().find((entry) => entry.id === id);
+                    if (!item) return;
+                    setCheckoutItemQuantity(id, item.quantity + 1);
+                });
+            });
+
+            listDiv.querySelectorAll('.checkout-qty-input').forEach((input) => {
+                input.addEventListener('change', () => {
+                    const id = input.getAttribute('data-id');
+                    setCheckoutItemQuantity(id, input.value);
+                });
+            });
+
+            listDiv.querySelectorAll('.checkout-remove-item-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    removeCheckoutItem(id);
+                });
+            });
         }
 
         function validateCheckoutForm() {

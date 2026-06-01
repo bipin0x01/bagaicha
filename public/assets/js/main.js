@@ -81,6 +81,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Confirm logout links
+  document.addEventListener("click", async (e) => {
+    const logoutLink = e.target.closest("a[data-confirm-logout='true']");
+    if (!logoutLink) return;
+    e.preventDefault();
+    const ok = await showConfirmModal(
+      "Log out?",
+      "You will need to log in again to access your account.",
+      { confirmText: "Log out", cancelText: "Cancel", danger: true }
+    );
+    if (ok) {
+      window.location.href = logoutLink.getAttribute("href");
+    }
+  });
+
+  // Confirm destructive form submissions
+  document.addEventListener("submit", async (e) => {
+    const form = e.target.closest("form[data-confirm-message]");
+    if (!form) return;
+    e.preventDefault();
+    const message = form.dataset.confirmMessage || "Are you sure?";
+    const ok = await showConfirmModal("Please confirm", message, {
+      confirmText: "Continue",
+      cancelText: "Cancel",
+      danger: true,
+    });
+    if (ok) {
+      form.submit();
+    }
+  });
+
   // Update Cart UI on page load to set correct counts
   updateCartUI();
 
@@ -208,6 +239,15 @@ function removeFromCart(id) {
   saveCart(cart);
 }
 
+function setCartItemQuantity(id, quantity) {
+  const nextQty = Math.max(1, parseInt(quantity, 10) || 1);
+  const cart = getCart();
+  const target = cart.find(item => item.id === id);
+  if (!target) return;
+  target.quantity = nextQty;
+  saveCart(cart);
+}
+
 function updateCartUI() {
   const cartBody = document.querySelector(".cart-popup-body");
   if (!cartBody) return;
@@ -264,7 +304,13 @@ function updateCartUI() {
       </div>
       <div class="cart-popup-body-content-item-info flex-1 flex flex-col min-w-0">
         <h4 class="text-sm font-bold text-gray-800 truncate mb-0.5">${item.name}</h4>
-        <div class="text-xs font-medium text-primary">Rs. ${item.price} <span class="text-gray-400 font-normal">x ${item.quantity}</span></div>
+        <div class="text-xs font-medium text-primary">Rs. ${Number(item.price).toFixed(2)}</div>
+        <div class="mt-1 flex items-center gap-2">
+          <button class="cart-qty-minus w-6 h-6 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold cursor-pointer" data-id="${item.id}" type="button">-</button>
+          <input class="cart-qty-input w-10 h-6 rounded-md border border-gray-200 text-center text-xs font-semibold text-gray-700" data-id="${item.id}" type="number" min="1" value="${item.quantity}">
+          <button class="cart-qty-plus w-6 h-6 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-bold cursor-pointer" data-id="${item.id}" type="button">+</button>
+          <span class="text-[11px] text-gray-400 ml-1">= Rs. ${Number(itemTotal).toFixed(2)}</span>
+        </div>
       </div>
       <div class="cart-popup-body-content-item-delete ml-2">
         <button class="btn delete-cart-item-btn p-1.5 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg border border-transparent hover:border-red-100 transition-colors cursor-pointer" data-id="${item.id}" type="button">
@@ -286,7 +332,7 @@ function updateCartUI() {
   summaryBlock.innerHTML = `
     <div class="flex justify-between items-center font-bold text-sm text-gray-800 mb-4">
       <span>Subtotal:</span>
-      <span class="text-primary text-base">Rs. ${subtotal}</span>
+      <span class="text-primary text-base">Rs. ${Number(subtotal).toFixed(2)}</span>
     </div>
     <div class="flex gap-3">
       <button class="flex-1 bg-white hover:bg-gray-50 text-gray-700 text-xs font-semibold px-4 py-2.5 rounded-xl border border-gray-200 transition-colors cursor-pointer" id="clear-cart-btn" type="button">Clear Cart</button>
@@ -305,10 +351,44 @@ function updateCartUI() {
     });
   });
 
+  const minusBtns = cartBody.querySelectorAll(".cart-qty-minus");
+  minusBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-id");
+      const current = cart.find(item => item.id === id);
+      if (!current) return;
+      setCartItemQuantity(id, current.quantity - 1);
+    });
+  });
+
+  const plusBtns = cartBody.querySelectorAll(".cart-qty-plus");
+  plusBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-id");
+      const current = cart.find(item => item.id === id);
+      if (!current) return;
+      setCartItemQuantity(id, current.quantity + 1);
+    });
+  });
+
+  const qtyInputs = cartBody.querySelectorAll(".cart-qty-input");
+  qtyInputs.forEach(input => {
+    input.addEventListener("change", () => {
+      const id = input.getAttribute("data-id");
+      setCartItemQuantity(id, input.value);
+    });
+  });
+
   // Bind clear cart handler safely
   const clearBtn = cartBody.querySelector("#clear-cart-btn");
   if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
+    clearBtn.addEventListener("click", async () => {
+      const ok = await showConfirmModal(
+        "Clear cart?",
+        "This will remove all items from your cart.",
+        { confirmText: "Clear", cancelText: "Keep items", danger: true }
+      );
+      if (!ok) return;
       saveCart([]);
     });
   }
@@ -430,6 +510,52 @@ function showModal(title, message, type = 'info') {
     if (e.target === overlay) {
       overlay.classList.remove("show");
     }
+  });
+}
+
+function showConfirmModal(title, message, options = {}) {
+  const {
+    confirmText = "Confirm",
+    cancelText = "Cancel",
+    danger = false,
+  } = options;
+
+  return new Promise((resolve) => {
+    let overlay = document.querySelector(".custom-modal-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "custom-modal-overlay";
+      document.body.appendChild(overlay);
+    }
+
+    const confirmBtnStyle = danger
+      ? "padding:10px 18px; border:none; border-radius:10px; background:#e11d48; color:#fff; font-weight:600; cursor:pointer;"
+      : "padding:10px 18px; border:none; border-radius:10px; background:#682d91; color:#fff; font-weight:600; cursor:pointer;";
+
+    overlay.innerHTML = `
+      <div class="custom-modal-card" style="font-family: 'Poppins', sans-serif;">
+        <div class="custom-modal-icon ${danger ? "error" : "info"}">${danger ? "!" : "?"}</div>
+        <div class="custom-modal-title">${title}</div>
+        <div class="custom-modal-message">${message}</div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button type="button" class="custom-confirm-cancel" style="padding:10px 18px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; color:#374151; font-weight:600; cursor:pointer;">${cancelText}</button>
+          <button type="button" class="custom-confirm-okay" style="${confirmBtnStyle}">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    setTimeout(() => overlay.classList.add("show"), 30);
+
+    const cleanup = (result) => {
+      overlay.classList.remove("show");
+      setTimeout(() => resolve(result), 150);
+    };
+
+    overlay.querySelector(".custom-confirm-cancel")?.addEventListener("click", () => cleanup(false));
+    overlay.querySelector(".custom-confirm-okay")?.addEventListener("click", () => cleanup(true));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) cleanup(false);
+    }, { once: true });
   });
 }
 

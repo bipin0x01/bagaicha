@@ -34,7 +34,7 @@ $total_amount = number_format($total_amount_raw, 2, '.', '');
 $transaction_uuid = 'bagaicha-' . time() . '-' . rand(1000, 9999);
 
 // 1. Insert order into Database
-$order_stmt = $db->prepare("INSERT INTO orders (transaction_uuid, total_amount, status, fname, lname, email, phone, address) VALUES (:uuid, :total, 'pending', :fname, :lname, :email, :phone, :address)");
+$order_stmt = $db->prepare("INSERT INTO orders (transaction_uuid, total_amount, status, payment_status, payment_method, fname, lname, email, phone, address) VALUES (:uuid, :total, 'pending', 'pending', 'esewa', :fname, :lname, :email, :phone, :address)");
 $order_stmt->bindValue(':uuid', $transaction_uuid, SQLITE3_TEXT);
 $order_stmt->bindValue(':total', $total_amount, SQLITE3_FLOAT);
 $order_stmt->bindValue(':fname', $fname, SQLITE3_TEXT);
