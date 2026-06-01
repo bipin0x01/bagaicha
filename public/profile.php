@@ -6,14 +6,14 @@
 require_once dirname(__DIR__) . '/config/bootstrap.php';
 
 // Redirect to login if guest
-if (!isset($_SESSION['email'])) {
+if (!isset($_SESSION['user_email'])) {
     header("Location: " . url('login.php'));
     exit;
 }
 
-$fname = $_SESSION['fname'];
-$lname = $_SESSION['lname'];
-$email = $_SESSION['email'];
+$fname = $_SESSION['user_fname'] ?? '';
+$lname = $_SESSION['user_lname'] ?? '';
+$email = $_SESSION['user_email'] ?? '';
 
 // 1. Fetch User details (e.g. registration date, phone, address) using email
 $user_stmt = $db->prepare("SELECT created_at, phone, address FROM users WHERE email = :email");
@@ -21,8 +21,8 @@ $user_stmt->bindValue(':email', $email, SQLITE3_TEXT);
 $user_res = $user_stmt->execute();
 $user_row = $user_res->fetchArray(SQLITE3_ASSOC);
 $reg_date = $user_row ? format_utc_datetime($user_row['created_at'], 'F d, Y') : "N/A";
-$phone = $user_row ? $user_row['phone'] : (isset($_SESSION['phone']) ? $_SESSION['phone'] : "N/A");
-$address = $user_row ? $user_row['address'] : (isset($_SESSION['address']) ? $_SESSION['address'] : "N/A");
+$phone = $user_row ? $user_row['phone'] : (isset($_SESSION['user_phone']) ? $_SESSION['user_phone'] : "N/A");
+$address = $user_row ? $user_row['address'] : (isset($_SESSION['user_address']) ? $_SESSION['user_address'] : "N/A");
 
 // 2. Fetch Order History for this user based on email
 $orders = [];
@@ -111,7 +111,7 @@ if ($orders_res) {
                     <a href="/shop.php" class="inline-block bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-5 py-2.5 transition-colors">Shop Bonsais Now</a>
                 </div>
             <?php else: ?>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
                     <input id="profile-order-search" type="text" placeholder="Search by reference..." class="md:col-span-2 w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700">
                     <select id="profile-method-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
                         <option value="all">All methods</option>
@@ -125,12 +125,29 @@ if ($orders_res) {
                         <option value="failed">Failed</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
+                    <select id="profile-order-status-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                        <option value="all">All order statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <select id="profile-order-sort" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer md:col-span-2">
+                        <option value="latest">Sort: Latest first</option>
+                        <option value="oldest">Sort: Oldest first</option>
+                        <option value="amount-desc">Amount: High to low</option>
+                        <option value="amount-asc">Amount: Low to high</option>
+                    </select>
                 </div>
                 <?php foreach ($orders as $order): ?>
                     <div class="profile-order-card bg-white border border-gray-100 rounded-3xl mb-6 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                          data-reference="<?php echo htmlspecialchars(strtolower($order['transaction_uuid']), ENT_QUOTES, 'UTF-8'); ?>"
                          data-method="<?php echo htmlspecialchars(strtolower($order['payment_method'] ?? 'esewa'), ENT_QUOTES, 'UTF-8'); ?>"
-                         data-payment="<?php echo htmlspecialchars(strtolower($order['payment_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>">
+                         data-payment="<?php echo htmlspecialchars(strtolower($order['payment_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-status="<?php echo htmlspecialchars(strtolower($order['status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-created="<?php echo htmlspecialchars((string)strtotime($order['created_at']), ENT_QUOTES, 'UTF-8'); ?>"
+                         data-total="<?php echo htmlspecialchars((string)((float)$order['total_amount']), ENT_QUOTES, 'UTF-8'); ?>">
                         <!-- Order header -->
                         <div class="bg-gray-50/50 px-6 py-5 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 items-center">
                             <div>
@@ -220,14 +237,26 @@ if ($orders_res) {
             const search = (document.getElementById('profile-order-search')?.value || '').trim().toLowerCase();
             const method = document.getElementById('profile-method-filter')?.value || 'all';
             const payment = document.getElementById('profile-payment-filter')?.value || 'all';
-            const cards = document.querySelectorAll('.profile-order-card');
+            const orderStatus = document.getElementById('profile-order-status-filter')?.value || 'all';
+            const sort = document.getElementById('profile-order-sort')?.value || 'latest';
+            const cards = Array.from(document.querySelectorAll('.profile-order-card'));
+            const listParent = cards[0]?.parentElement;
             let visible = 0;
+
+            cards.sort((a, b) => {
+                if (sort === 'oldest') return Number(a.dataset.created || 0) - Number(b.dataset.created || 0);
+                if (sort === 'amount-desc') return Number(b.dataset.total || 0) - Number(a.dataset.total || 0);
+                if (sort === 'amount-asc') return Number(a.dataset.total || 0) - Number(b.dataset.total || 0);
+                return Number(b.dataset.created || 0) - Number(a.dataset.created || 0);
+            });
+            if (listParent) cards.forEach(card => listParent.appendChild(card));
 
             cards.forEach(card => {
                 const matchesSearch = !search || (card.dataset.reference || '').includes(search);
                 const matchesMethod = method === 'all' || (card.dataset.method || '') === method;
                 const matchesPayment = payment === 'all' || (card.dataset.payment || '') === payment;
-                const show = matchesSearch && matchesMethod && matchesPayment;
+                const matchesStatus = orderStatus === 'all' || (card.dataset.status || '') === orderStatus;
+                const show = matchesSearch && matchesMethod && matchesPayment && matchesStatus;
                 card.style.display = show ? '' : 'none';
                 if (show) visible++;
             });
@@ -240,7 +269,9 @@ if ($orders_res) {
             const controls = [
                 document.getElementById('profile-order-search'),
                 document.getElementById('profile-method-filter'),
-                document.getElementById('profile-payment-filter')
+                document.getElementById('profile-payment-filter'),
+                document.getElementById('profile-order-status-filter'),
+                document.getElementById('profile-order-sort')
             ];
             controls.forEach(el => {
                 if (!el) return;

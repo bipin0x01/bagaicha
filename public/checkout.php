@@ -10,12 +10,12 @@ $lname = "";
 $email = "";
 $phone = "";
 $address = "";
-if (isset($_SESSION['email'])) {
-    $fname = isset($_SESSION['fname']) ? $_SESSION['fname'] : "";
-    $lname = isset($_SESSION['lname']) ? $_SESSION['lname'] : "";
-    $email = $_SESSION['email'];
-    $phone = isset($_SESSION['phone']) ? $_SESSION['phone'] : "";
-    $address = isset($_SESSION['address']) ? $_SESSION['address'] : "";
+if (isset($_SESSION['user_email'])) {
+    $fname = isset($_SESSION['user_fname']) ? $_SESSION['user_fname'] : "";
+    $lname = isset($_SESSION['user_lname']) ? $_SESSION['user_lname'] : "";
+    $email = $_SESSION['user_email'];
+    $phone = isset($_SESSION['user_phone']) ? $_SESSION['user_phone'] : "";
+    $address = isset($_SESSION['user_address']) ? $_SESSION['user_address'] : "";
 }
 ?>
 <!DOCTYPE html>
@@ -70,10 +70,10 @@ if (isset($_SESSION['email'])) {
                             placeholder="example@gmail.com"
                             value="<?php echo htmlspecialchars($email); ?>"
                             required
-                            <?php echo isset($_SESSION['email']) ? 'readonly aria-readonly="true"' : ''; ?>
-                            class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 transition-colors <?php echo isset($_SESSION['email']) ? 'bg-gray-50 text-gray-500 cursor-not-allowed focus:border-gray-200' : ''; ?>"
+                            <?php echo isset($_SESSION['user_email']) ? 'readonly aria-readonly="true"' : ''; ?>
+                            class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 transition-colors <?php echo isset($_SESSION['user_email']) ? 'bg-gray-50 text-gray-500 cursor-not-allowed focus:border-gray-200' : ''; ?>"
                         >
-                        <?php if (isset($_SESSION['email'])): ?>
+                        <?php if (isset($_SESSION['user_email'])): ?>
                             <p class="text-[10px] text-gray-400 mt-1">Email is locked to your logged-in account.</p>
                         <?php endif; ?>
                     </div>

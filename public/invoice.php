@@ -6,13 +6,13 @@
 require_once dirname(__DIR__) . '/config/bootstrap.php';
 
 // Redirect to login if guest
-if (!isset($_SESSION['email'])) {
+if (!isset($_SESSION['user_email']) && empty($_SESSION['admin_logged_in'])) {
     header("Location: " . url('login.php'));
     exit;
 }
 
-$session_email = $_SESSION['email'];
-$is_admin = ($session_email === 'admin@bagaicha.com');
+$session_email = $_SESSION['user_email'] ?? '';
+$is_admin = !empty($_SESSION['admin_logged_in']) && (($_SESSION['admin_email'] ?? '') === 'admin@bagaicha.com');
 
 $uuid = isset($_GET['uuid']) ? trim($_GET['uuid']) : '';
 if (empty($uuid)) {

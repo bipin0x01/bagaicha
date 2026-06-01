@@ -5,7 +5,7 @@
  */
 require_once dirname(__DIR__) . '/config/bootstrap.php';
 
-if (!empty($_SESSION['email'])) {
+if (!empty($_SESSION['user_email'])) {
     header('Location: ' . url('profile.php'));
     exit;
 }

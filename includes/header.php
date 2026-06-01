@@ -3,8 +3,8 @@
  * Shared Dynamic Header Component
  */
 $current_page = basename($_SERVER['PHP_SELF']);
-$fname = $_SESSION['fname'] ?? '';
-$email = $_SESSION['email'] ?? '';
+$fname = $_SESSION['user_fname'] ?? '';
+$email = $_SESSION['user_email'] ?? '';
 $account_label = !empty($fname) ? $fname : 'Log In';
 $account_target = !empty($email) ? url('profile.php') : url('login.php');
 ?>
@@ -51,9 +51,6 @@ $account_target = !empty($email) ? url('profile.php') : url('login.php');
                     <a href="<?php echo url('profile.php'); ?>" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">My Account</a>
                     <a href="<?php echo url('profile.php'); ?>#orders" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">Orders</a>
                     <button type="button" id="user-menu-cart" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">Cart</button>
-                    <?php if ($email === 'admin@bagaicha.com'): ?>
-                        <a href="<?php echo url('admin.php'); ?>" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">Admin Portal</a>
-                    <?php endif; ?>
                 </div>
                 <div class="border-t border-gray-100">
                     <a href="<?php echo url('logout.php'); ?>" class="block px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50" data-confirm-logout="true">Log out</a>

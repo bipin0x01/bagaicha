@@ -14,12 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
     $password = $_POST['password'];
 
     if ($email === 'admin@bagaicha.com' && $password === 'admin123') {
-        $_SESSION['user_id'] = 0; // Admin ID
-        $_SESSION['fname'] = "Admin";
-        $_SESSION['lname'] = "Bagaicha";
-        $_SESSION['email'] = "admin@bagaicha.com";
-        $_SESSION['phone'] = "9800000000";
-        $_SESSION['address'] = "Kathmandu";
+        // Keep admin and customer sessions separate.
+        $_SESSION['admin_logged_in'] = true;
+        $_SESSION['admin_email'] = "admin@bagaicha.com";
+        $_SESSION['admin_fname'] = "Admin";
+        $_SESSION['admin_lname'] = "Bagaicha";
         
         $message = "Welcome back, Admin!";
         $message_type = "success";
@@ -30,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
 }
 
 // Check if logged in as Admin
-$is_admin = (isset($_SESSION['email']) && $_SESSION['email'] === 'admin@bagaicha.com');
+$is_admin = !empty($_SESSION['admin_logged_in']) && (($_SESSION['admin_email'] ?? '') === 'admin@bagaicha.com');
 
 // 2. Handle Admin Actions (only if logged in as admin)
 if ($is_admin && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -363,14 +362,14 @@ if ($is_admin) {
                 <div class="flex justify-between items-center bg-white border border-gray-100 rounded-2xl px-8 py-6 mb-8 shadow-sm">
                     <div>
                         <h1 class="text-2xl font-extrabold text-gray-800">Admin Dashboard</h1>
-                        <p class="text-xs text-gray-500 mt-1">Welcome back, <strong><?php echo htmlspecialchars(trim(($_SESSION['fname'] ?? 'Admin') . ' ' . ($_SESSION['lname'] ?? ''))); ?></strong>. Manage inventory, view logs, and update order statuses.</p>
+                        <p class="text-xs text-gray-500 mt-1">Welcome back, <strong><?php echo htmlspecialchars(trim(($_SESSION['admin_fname'] ?? 'Admin') . ' ' . ($_SESSION['admin_lname'] ?? ''))); ?></strong>. Manage inventory, view logs, and update order statuses.</p>
                     </div>
                     <div class="bg-gradient-to-br from-white to-gray-50 border border-gray-100 rounded-2xl px-4 py-3 min-w-[290px] shadow-sm">
                         <div class="flex items-start gap-3">
                             <div class="w-11 h-11 rounded-xl bg-primary/12 border border-primary/20 text-primary font-extrabold text-sm flex items-center justify-center shrink-0">
                                 <?php
-                                    $admin_fname = $_SESSION['fname'] ?? 'Admin';
-                                    $admin_lname = $_SESSION['lname'] ?? '';
+                                    $admin_fname = $_SESSION['admin_fname'] ?? 'Admin';
+                                    $admin_lname = $_SESSION['admin_lname'] ?? '';
                                     $admin_name = trim($admin_fname . ' ' . $admin_lname);
                                     $initials = strtoupper(substr($admin_fname, 0, 1) . substr($admin_lname, 0, 1));
                                     if ($initials === '') $initials = 'AD';
@@ -385,7 +384,7 @@ if ($is_admin) {
                                         Admin
                                     </span>
                                 </div>
-                                <p class="text-[11px] text-gray-500 font-medium truncate"><?php echo htmlspecialchars($_SESSION['email'] ?? 'admin@bagaicha.com'); ?></p>
+                                <p class="text-[11px] text-gray-500 font-medium truncate"><?php echo htmlspecialchars($_SESSION['admin_email'] ?? 'admin@bagaicha.com'); ?></p>
                                 <p class="text-[10px] text-gray-400 mt-1.5">Local time: <?php echo local_now('d M Y, h:i A'); ?></p>
                             </div>
                         </div>
@@ -455,13 +454,18 @@ if ($is_admin) {
                         <button onclick="openProductModal()" class="bg-primary hover:bg-primary-dark text-white text-xs font-bold rounded-xl px-5 py-2.5 transition-colors cursor-pointer shadow-sm hover:shadow-md">+ New Product</button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <input id="admin-product-search" type="text" placeholder="Search product name..." class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700">
                         <select id="admin-product-price-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
                             <option value="all">All price ranges</option>
                             <option value="0-3000">Up to Rs. 3,000</option>
                             <option value="3000-7000">Rs. 3,000 - 7,000</option>
                             <option value="7000+">Above Rs. 7,000</option>
+                        </select>
+                        <select id="admin-product-discount-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="all">All pricing types</option>
+                            <option value="discounted">Discounted only</option>
+                            <option value="regular">Regular price only</option>
                         </select>
                         <select id="admin-product-sort" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
                             <option value="default">Sort: Default</option>
@@ -494,7 +498,10 @@ if ($is_admin) {
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($products as $p): ?>
-                                        <tr class="admin-product-row hover:bg-gray-50/50 transition-colors" data-name="<?php echo htmlspecialchars(strtolower($p['name']), ENT_QUOTES, 'UTF-8'); ?>" data-price="<?php echo (float)$p['price']; ?>">
+                                        <tr class="admin-product-row hover:bg-gray-50/50 transition-colors"
+                                            data-name="<?php echo htmlspecialchars(strtolower($p['name']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-price="<?php echo (float)$p['price']; ?>"
+                                            data-discount="<?php echo (!empty($p['discount_price']) && (float)$p['discount_price'] > (float)$p['price']) ? '1' : '0'; ?>">
                                             <td class="px-6 py-4">
                                                 <div class="w-12 h-12 rounded-lg border border-gray-100 overflow-hidden shrink-0">
                                                     <img src="<?php echo htmlspecialchars($p['image_url']); ?>" alt="product" class="w-full h-full object-cover">
@@ -609,7 +616,7 @@ if ($is_admin) {
                         <h3 class="text-base font-bold text-gray-850 border-b border-gray-100 pb-3">Orders</h3>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                         <input id="admin-order-search" type="text" placeholder="Search customer, email, ref..." class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 lg:col-span-2">
                         <select id="admin-order-method-filter" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
                             <option value="all">All methods</option>
@@ -630,6 +637,13 @@ if ($is_admin) {
                             <option value="completed">Completed</option>
                             <option value="failed">Failed</option>
                             <option value="cancelled">Cancelled</option>
+                        </select>
+                        <select id="admin-order-sort" class="w-full bg-white border border-gray-200 focus:border-primary focus:outline-none rounded-xl px-4 py-2.5 text-xs text-gray-700 cursor-pointer">
+                            <option value="latest">Sort: Latest first</option>
+                            <option value="oldest">Sort: Oldest first</option>
+                            <option value="amount-desc">Amount high-low</option>
+                            <option value="amount-asc">Amount low-high</option>
+                            <option value="customer-asc">Customer A-Z</option>
                         </select>
                     </div>
                     
@@ -660,6 +674,8 @@ if ($is_admin) {
                                             data-method="<?php echo htmlspecialchars(strtolower($o['payment_method']), ENT_QUOTES, 'UTF-8'); ?>"
                                             data-payment="<?php echo htmlspecialchars(strtolower($o['payment_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>"
                                             data-status="<?php echo htmlspecialchars(strtolower($o['status']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-created="<?php echo htmlspecialchars((string)strtotime($o['created_at']), ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-total="<?php echo htmlspecialchars((string)((float)$o['total_amount']), ENT_QUOTES, 'UTF-8'); ?>"
                                             onclick="showAdminOrderDetails(<?php echo $o['id']; ?>)">
                                             <td class="px-6 py-4">
                                                 <strong class="text-gray-800 font-bold block"><?php echo htmlspecialchars($o['fname'] . ' ' . $o['lname']); ?></strong>
@@ -868,6 +884,7 @@ if ($is_admin) {
         function filterAdminProducts() {
             const search = (document.getElementById('admin-product-search')?.value || '').trim().toLowerCase();
             const priceBand = document.getElementById('admin-product-price-filter')?.value || 'all';
+            const discountType = document.getElementById('admin-product-discount-filter')?.value || 'all';
             const sort = document.getElementById('admin-product-sort')?.value || 'default';
             const tbody = document.getElementById('admin-products-tbody');
             if (!tbody) return;
@@ -892,7 +909,11 @@ if ($is_admin) {
                 else if (priceBand === '3000-7000') matchesPrice = price > 3000 && price <= 7000;
                 else if (priceBand === '7000+') matchesPrice = price > 7000;
 
-                const show = matchesSearch && matchesPrice;
+                const matchesDiscount = discountType === 'all'
+                    || (discountType === 'discounted' && (row.dataset.discount || '0') === '1')
+                    || (discountType === 'regular' && (row.dataset.discount || '0') === '0');
+
+                const show = matchesSearch && matchesPrice && matchesDiscount;
                 row.style.display = show ? '' : 'none';
                 if (show) visible++;
             });
@@ -913,11 +934,20 @@ if ($is_admin) {
             const method = document.getElementById('admin-order-method-filter')?.value || 'all';
             const payment = document.getElementById('admin-order-payment-filter')?.value || 'all';
             const status = document.getElementById('admin-order-status-filter')?.value || 'all';
+            const sort = document.getElementById('admin-order-sort')?.value || 'latest';
             const tbody = document.getElementById('admin-orders-tbody');
             if (!tbody) return;
 
             const rows = Array.from(tbody.querySelectorAll('.admin-order-row'));
             let visible = 0;
+
+            rows.sort((a, b) => {
+                if (sort === 'oldest') return Number(a.dataset.created || 0) - Number(b.dataset.created || 0);
+                if (sort === 'amount-desc') return Number(b.dataset.total || 0) - Number(a.dataset.total || 0);
+                if (sort === 'amount-asc') return Number(a.dataset.total || 0) - Number(b.dataset.total || 0);
+                if (sort === 'customer-asc') return (a.dataset.customer || '').localeCompare(b.dataset.customer || '');
+                return Number(b.dataset.created || 0) - Number(a.dataset.created || 0);
+            }).forEach(row => tbody.appendChild(row));
 
             rows.forEach(row => {
                 const searchable = `${row.dataset.customer || ''} ${row.dataset.email || ''} ${row.dataset.reference || ''}`;
@@ -944,19 +974,21 @@ if ($is_admin) {
         window.addEventListener('DOMContentLoaded', () => {
             const productSearch = document.getElementById('admin-product-search');
             const productPrice = document.getElementById('admin-product-price-filter');
+            const productDiscount = document.getElementById('admin-product-discount-filter');
             const productSort = document.getElementById('admin-product-sort');
             const orderSearch = document.getElementById('admin-order-search');
             const orderMethod = document.getElementById('admin-order-method-filter');
             const orderPayment = document.getElementById('admin-order-payment-filter');
             const orderStatus = document.getElementById('admin-order-status-filter');
+            const orderSort = document.getElementById('admin-order-sort');
 
-            [productSearch, productPrice, productSort].forEach(el => {
+            [productSearch, productPrice, productDiscount, productSort].forEach(el => {
                 if (!el) return;
                 el.addEventListener('input', filterAdminProducts);
                 el.addEventListener('change', filterAdminProducts);
             });
 
-            [orderSearch, orderMethod, orderPayment, orderStatus].forEach(el => {
+            [orderSearch, orderMethod, orderPayment, orderStatus, orderSort].forEach(el => {
                 if (!el) return;
                 el.addEventListener('input', filterAdminOrders);
                 el.addEventListener('change', filterAdminOrders);

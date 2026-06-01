@@ -5,7 +5,7 @@
  */
 require_once dirname(__DIR__) . '/config/bootstrap.php';
 
-if (!empty($_SESSION['email'])) {
+if (!empty($_SESSION['user_email'])) {
     header('Location: ' . url('profile.php'));
     exit;
 }
@@ -35,13 +35,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user_row = $res->fetchArray(SQLITE3_ASSOC);
 
         if ($user_row && password_verify($password, $user_row['password'])) {
-            // Login success - save session variables
+            // Login success - save customer session variables only.
+            $_SESSION['user_logged_in'] = true;
             $_SESSION['user_id'] = $user_row['id'];
-            $_SESSION['fname'] = $user_row['fname'];
-            $_SESSION['lname'] = $user_row['lname'];
-            $_SESSION['email'] = $user_row['email'];
-            $_SESSION['phone'] = $user_row['phone'];
-            $_SESSION['address'] = $user_row['address'];
+            $_SESSION['user_fname'] = $user_row['fname'];
+            $_SESSION['user_lname'] = $user_row['lname'];
+            $_SESSION['user_email'] = $user_row['email'];
+            $_SESSION['user_phone'] = $user_row['phone'];
+            $_SESSION['user_address'] = $user_row['address'];
 
             header("Location: " . url('index.php'));
             exit;
