@@ -1,0 +1,5 @@
+# Keep storage directories in version control
+*
+!.gitignore
+!database/
+!database/.gitkeep
