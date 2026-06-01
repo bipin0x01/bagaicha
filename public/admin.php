@@ -364,9 +364,9 @@ if ($is_admin) {
                         <h1 class="text-2xl font-extrabold text-gray-800">Admin Dashboard</h1>
                         <p class="text-xs text-gray-500 mt-1">Welcome back, <strong><?php echo htmlspecialchars(trim(($_SESSION['admin_fname'] ?? 'Admin') . ' ' . ($_SESSION['admin_lname'] ?? ''))); ?></strong>. Manage inventory, view logs, and update order statuses.</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-gray-50 border border-gray-100 rounded-2xl px-4 py-3 min-w-[290px] shadow-sm">
+                    <div class="bg-white border border-gray-200 rounded-lg px-4 py-3 min-w-[290px]">
                         <div class="flex items-start gap-3">
-                            <div class="w-11 h-11 rounded-xl bg-primary/12 border border-primary/20 text-primary font-extrabold text-sm flex items-center justify-center shrink-0">
+                            <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center shrink-0">
                                 <?php
                                     $admin_fname = $_SESSION['admin_fname'] ?? 'Admin';
                                     $admin_lname = $_SESSION['admin_lname'] ?? '';
@@ -379,8 +379,7 @@ if ($is_admin) {
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between gap-2">
                                     <p class="text-sm font-extrabold text-gray-800 truncate"><?php echo htmlspecialchars($admin_name); ?></p>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 shrink-0">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200 shrink-0">
                                         Admin
                                     </span>
                                 </div>

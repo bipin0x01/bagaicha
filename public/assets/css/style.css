@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BAGAICHA — Modern Animations, Custom Scrollbars & Modal Overlays
+   BAGAICHA — Minimal UI tuning layer
    Complementary styles to Tailwind CSS v3 Play CDN integration.
    ========================================================================== */
 
@@ -54,7 +54,7 @@
 
 /* ── Micro-Animations ────────────────────────────────────────────────── */
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+  animation: fadeIn 0.16s ease-out forwards;
 }
 
 @keyframes fadeIn {
@@ -82,13 +82,14 @@
 .custom-toast {
   background: #ffffff;
   color: #1c1c2e;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 8px 18px -8px rgba(28, 28, 46, 0.25);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px -10px rgba(28, 28, 46, 0.3);
   display: flex;
   align-items: center;
   gap: 14px;
-  border-left: 4px solid #682d91;
+  border: 1px solid #eceff3;
+  border-left: 3px solid #682d91;
   min-width: 320px;
   max-width: 420px;
   font-family: 'Poppins', sans-serif;
@@ -165,8 +166,8 @@
 .custom-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(28, 28, 46, 0.5);
-  backdrop-filter: blur(8px);
+  background: rgba(28, 28, 46, 0.42);
+  backdrop-filter: blur(3px);
   z-index: 9999999;
   display: flex;
   justify-content: center;
@@ -183,15 +184,51 @@
 
 .custom-modal-card {
   background: #ffffff;
-  padding: 32px 28px;
-  border-radius: 20px;
-  box-shadow: 0 20px 35px -18px rgba(28, 28, 46, 0.35);
+  padding: 24px 22px;
+  border-radius: 14px;
+  border: 1px solid #eceff3;
+  box-shadow: 0 8px 20px -16px rgba(28, 28, 46, 0.35);
   text-align: center;
   max-width: 440px;
   width: 90%;
   transform: translateY(8px);
   transition: transform 0.2s ease-out;
   font-family: 'Poppins', sans-serif;
+}
+
+/* ── Minimalistic surface tweaks across pages ─────────────────────────── */
+.navbar {
+  backdrop-filter: none !important;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.06) !important;
+}
+
+.cart-popup-content {
+  border: 1px solid #eceff3;
+  box-shadow: 0 8px 24px -20px rgba(17, 24, 39, 0.35) !important;
+  border-radius: 14px;
+}
+
+.payment-card,
+.profile-order-card,
+.admin-tab-content,
+.product-card {
+  box-shadow: none !important;
+}
+
+.payment-card,
+.profile-order-card,
+.admin-tab-content {
+  border-color: #e5e7eb !important;
+}
+
+.product-card:hover,
+.profile-order-card:hover {
+  transform: none !important;
+}
+
+button,
+a {
+  transition-duration: 120ms !important;
 }
 
 .custom-modal-overlay.show .custom-modal-card {

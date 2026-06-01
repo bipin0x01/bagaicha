@@ -141,7 +141,7 @@ if ($orders_res) {
                     </select>
                 </div>
                 <?php foreach ($orders as $order): ?>
-                    <div class="profile-order-card bg-white border border-gray-100 rounded-3xl mb-6 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    <div class="profile-order-card bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden"
                          data-reference="<?php echo htmlspecialchars(strtolower($order['transaction_uuid']), ENT_QUOTES, 'UTF-8'); ?>"
                          data-method="<?php echo htmlspecialchars(strtolower($order['payment_method'] ?? 'esewa'), ENT_QUOTES, 'UTF-8'); ?>"
                          data-payment="<?php echo htmlspecialchars(strtolower($order['payment_status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>"
@@ -149,21 +149,21 @@ if ($orders_res) {
                          data-created="<?php echo htmlspecialchars((string)strtotime($order['created_at']), ENT_QUOTES, 'UTF-8'); ?>"
                          data-total="<?php echo htmlspecialchars((string)((float)$order['total_amount']), ENT_QUOTES, 'UTF-8'); ?>">
                         <!-- Order header -->
-                        <div class="bg-gray-50/50 px-6 py-5 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 items-center">
+                        <div class="px-6 py-4 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 items-center">
                             <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Order Date</span>
+                                <span class="block text-[10px] font-semibold text-gray-500 mb-0.5">Order Date</span>
                                 <span class="text-xs font-semibold text-gray-700"><?php echo format_utc_datetime($order['created_at'], 'F d, Y - h:i A'); ?></span>
                             </div>
                             <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Reference Code</span>
+                                <span class="block text-[10px] font-semibold text-gray-500 mb-0.5">Reference</span>
                                 <span class="text-xs font-mono font-semibold text-gray-700 truncate block w-28" title="<?php echo htmlspecialchars($order['transaction_uuid']); ?>"><?php echo htmlspecialchars($order['transaction_uuid']); ?></span>
                             </div>
                             <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Total Amount</span>
+                                <span class="block text-[10px] font-semibold text-gray-500 mb-0.5">Total</span>
                                 <span class="text-xs font-extrabold text-primary">Rs. <?php echo htmlspecialchars($order['total_amount']); ?></span>
                             </div>
                             <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Method</span>
+                                <span class="block text-[10px] font-semibold text-gray-500 mb-0.5">Method</span>
                                 <?php 
                                     $p_method = isset($order['payment_method']) ? $order['payment_method'] : 'esewa';
                                     $is_cod = ($p_method === 'cod');
@@ -173,7 +173,7 @@ if ($orders_res) {
                                 </span>
                             </div>
                             <div>
-                                <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Payment Status</span>
+                                <span class="block text-[10px] font-semibold text-gray-500 mb-0.5">Payment</span>
                                 <?php 
                                     $payment_status = $order['payment_status'] ?? 'pending';
                                     if ($payment_status === 'paid') {
@@ -193,7 +193,7 @@ if ($orders_res) {
                         </div>
 
                         <!-- Order delivery details -->
-                        <div class="bg-gray-50/20 px-6 py-3.5 border-b border-gray-100 text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div class="px-6 py-3 border-b border-gray-100 text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                             <div>
                                 Shipping Address: <strong class="text-gray-700 font-semibold"><?php echo htmlspecialchars($order['address']); ?></strong> 
                                 <span class="mx-2 text-gray-300">|</span> Phone Number: <strong class="text-gray-700 font-semibold"><?php echo htmlspecialchars($order['phone']); ?></strong>

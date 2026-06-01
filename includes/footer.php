@@ -1,8 +1,8 @@
-<footer class="bg-brand-dark text-white/80 border-t border-white/5">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 px-6 md:px-12 py-16">
+<footer class="bg-gray-900 text-white/80 border-t border-white/10">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-6 md:px-12 py-12">
         <div class="flex flex-col gap-5">
             <a class="text-2xl font-extrabold text-white tracking-tight" href="<?php echo url('index.php'); ?>"><span class="text-primary">B</span>agaicha</a>
-            <p class="text-sm text-gray-400 leading-relaxed">Premium bonsai trees and essentials, grown and curated in Nepal.</p>
+            <p class="text-sm text-gray-400 leading-relaxed">Simple bonsai shopping experience for your college project demo.</p>
         </div>
 
         <div class="flex flex-col gap-4">
@@ -16,11 +16,11 @@
         </div>
 
         <div class="flex flex-col gap-4">
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Support & Policies</h3>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Support</h3>
             <ul class="flex flex-col gap-2.5 text-sm">
                 <li><a href="#" onclick="showModal('FAQs', 'Frequently Asked Questions page coming soon!', 'info'); return false;" class="hover:text-primary-light transition-colors">FAQs</a></li>
                 <li><a href="#" onclick="showModal('Shipping', 'Free shipping within Nepal on orders above Rs. 1000.', 'info'); return false;" class="hover:text-primary-light transition-colors">Shipping Info</a></li>
-                <li><a href="#" onclick="showModal('Returns', 'Easy 7-day return policy for healthy plants and tools!', 'info'); return false;" class="hover:text-primary-light transition-colors">Returns & Refunds</a></li>
+                <li><a href="#" onclick="showModal('Returns', 'Easy 7-day return policy for healthy plants and tools!', 'info'); return false;" class="hover:text-primary-light transition-colors">Returns</a></li>
                 <li><a href="#" onclick="showModal('Payment Methods', 'We currently support eSewa and Cash on Delivery.', 'info'); return false;" class="hover:text-primary-light transition-colors">Payment Options</a></li>
                 <li><a href="<?php echo url('profile.php'); ?>" class="hover:text-primary-light transition-colors">My Account Portal</a></li>
             </ul>
@@ -46,8 +46,8 @@
         </div>
     </div>
 
-    <div class="border-t border-white/5 bg-black/20">
-        <div class="max-w-7xl mx-auto px-6 md:px-12 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+    <div class="border-t border-white/10 bg-black/10">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 py-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-500">
             <div>
                 <p>Copyright &copy; Bagaicha 2026. All rights reserved.</p>
             </div>
