@@ -70,7 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Login Form Container -->
     <main class="min-h-[70vh] flex items-center justify-center py-16 px-6 md:px-12 bg-gray-50/30">
         <div class="bg-white rounded-3xl border border-gray-100 shadow-xl w-full max-w-md p-8 md:p-10 animate-fade-in">
-            <h2 class="text-2xl font-extrabold text-gray-800 text-center mb-6">Log In to Bagaicha</h2>
+            <div class="text-center mb-6">
+                <a href="/index.php" class="inline-block text-2xl font-extrabold text-brand-dark tracking-tight">
+                    <span class="text-primary">B</span>agaicha
+                </a>
+                <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold mt-2">Welcome Back</p>
+                <h2 class="text-2xl font-extrabold text-gray-800 mt-2">Log In to Your Account</h2>
+            </div>
             
             <?php require INCLUDES_PATH . '/partials/alert.php'; ?>
 

@@ -29,9 +29,32 @@
   display: flex !important;
 }
 
+/* ── Cart Badge ───────────────────────────────────────────────────────── */
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+  pointer-events: none;
+}
+
 /* ── Micro-Animations ────────────────────────────────────────────────── */
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.25s ease-out forwards;
 }
 
 @keyframes fadeIn {
@@ -61,7 +84,7 @@
   color: #1c1c2e;
   padding: 16px;
   border-radius: 16px;
-  box-shadow: 0 10px 30px -5px rgba(28, 28, 46, 0.12), 0 5px 15px -3px rgba(28, 28, 46, 0.04);
+  box-shadow: 0 8px 18px -8px rgba(28, 28, 46, 0.25);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -69,7 +92,7 @@
   min-width: 320px;
   max-width: 420px;
   font-family: 'Poppins', sans-serif;
-  animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: toastSlideIn 0.2s ease-out forwards;
 }
 
 .custom-toast.success {
@@ -160,19 +183,19 @@
 
 .custom-modal-card {
   background: #ffffff;
-  padding: 40px 32px;
-  border-radius: 24px;
-  box-shadow: 0 25px 50px -12px rgba(28, 28, 46, 0.25);
+  padding: 32px 28px;
+  border-radius: 20px;
+  box-shadow: 0 20px 35px -18px rgba(28, 28, 46, 0.35);
   text-align: center;
   max-width: 440px;
   width: 90%;
-  transform: scale(0.9) translateY(12px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: translateY(8px);
+  transition: transform 0.2s ease-out;
   font-family: 'Poppins', sans-serif;
 }
 
 .custom-modal-overlay.show .custom-modal-card {
-  transform: scale(1) translateY(0);
+  transform: translateY(0);
 }
 
 .custom-modal-icon {

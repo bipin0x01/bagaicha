@@ -8,34 +8,78 @@ document.addEventListener("DOMContentLoaded", () => {
   const cartModal = document.getElementById("cart");
   const cartOpenBtn = document.getElementById("showcart-btn");
   const cartCloseBtn = document.getElementById("cart-close");
+  const userMenu = document.getElementById("user-menu");
+  const userMenuChevron = document.getElementById("user-menu-chevron");
+
+  const openCartModal = () => {
+    if (!cartModal) return;
+    cartModal.classList.add("cart-open");
+    cartModal.setAttribute("aria-hidden", "false");
+    updateCartUI();
+  };
+
+  const closeCartModal = () => {
+    if (!cartModal) return;
+    cartModal.classList.remove("cart-open");
+    cartModal.setAttribute("aria-hidden", "true");
+  };
 
   if (cartModal && cartOpenBtn && cartCloseBtn) {
     cartOpenBtn.addEventListener("click", () => {
-      cartModal.classList.add("cart-open");
-      cartModal.setAttribute("aria-hidden", "false");
-      updateCartUI();
+      openCartModal();
     });
 
     cartCloseBtn.addEventListener("click", () => {
-      cartModal.classList.remove("cart-open");
-      cartModal.setAttribute("aria-hidden", "true");
+      closeCartModal();
     });
 
     cartModal.addEventListener("click", (e) => {
       if (e.target === cartModal) {
-        cartModal.classList.remove("cart-open");
-        cartModal.setAttribute("aria-hidden", "true");
+        closeCartModal();
       }
     });
   }
 
-  // Redirect User Icon to Login page
+  // Account button: dropdown for logged-in users, redirect for guests
   const userBtn = document.getElementById("user-btn");
   if (userBtn) {
-    userBtn.addEventListener("click", () => {
-      window.location.href = "/login.php";
+    userBtn.addEventListener("click", (e) => {
+      if (userBtn.dataset.dropdown === "true" && userMenu) {
+        e.preventDefault();
+        const isHidden = userMenu.classList.contains("hidden");
+        userMenu.classList.toggle("hidden");
+        if (userMenuChevron) {
+          userMenuChevron.classList.toggle("rotate-180", isHidden);
+        }
+      } else {
+        window.location.href = userBtn.dataset.target || "/login.php";
+      }
     });
   }
+
+  const userMenuCart = document.getElementById("user-menu-cart");
+  if (userMenuCart) {
+    userMenuCart.addEventListener("click", () => {
+      if (userMenu) userMenu.classList.add("hidden");
+      if (userMenuChevron) userMenuChevron.classList.remove("rotate-180");
+      openCartModal();
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!userMenu || userMenu.classList.contains("hidden")) return;
+    if (!userMenu.contains(e.target) && !userBtn?.contains(e.target)) {
+      userMenu.classList.add("hidden");
+      if (userMenuChevron) userMenuChevron.classList.remove("rotate-180");
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && userMenu && !userMenu.classList.contains("hidden")) {
+      userMenu.classList.add("hidden");
+      if (userMenuChevron) userMenuChevron.classList.remove("rotate-180");
+    }
+  });
 
   // Update Cart UI on page load to set correct counts
   updateCartUI();
@@ -179,10 +223,10 @@ function updateCartUI() {
     if (totalQty > 0) {
       if (!badge) {
         badge = document.createElement("span");
-        badge.className = "cart-badge absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shadow-sm z-10";
+        badge.className = "cart-badge";
         cartOpenBtn.appendChild(badge);
       }
-      badge.textContent = totalQty;
+      badge.textContent = totalQty > 99 ? "99+" : String(totalQty);
     } else if (badge) {
       badge.remove();
     }

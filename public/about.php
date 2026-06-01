@@ -17,35 +17,41 @@ require_once dirname(__DIR__) . '/config/bootstrap.php';
     <?php require INCLUDES_PATH . '/header.php'; ?>
 
     <!-- About Hero -->
-    <div class="bg-brand-dark px-6 md:px-12 py-16 border-b border-white/5">
-        <div class="max-w-5xl mx-auto text-white">
+    <div class="bg-brand-dark px-6 md:px-12 py-14 border-b border-white/5">
+        <div class="max-w-7xl mx-auto text-white animate-fade-in">
             <span class="text-[10px] font-extrabold uppercase tracking-widest text-primary-light bg-primary/30 border border-primary-light/20 rounded-full px-3 py-1.5 inline-block mb-3.5">Our Story</span>
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2.5">About Bagaicha</h1>
-            <p class="text-sm text-gray-300 leading-relaxed max-w-lg">A small team of bonsai enthusiasts from Kathmandu, Nepal, sharing the ancient art of miniature trees with the world.</p>
+            <h1 class="text-3xl md:text-4xl font-extrabold leading-tight tracking-tight mb-2.5">About Bagaicha</h1>
+            <p class="text-sm text-gray-300 leading-relaxed max-w-2xl">A small team of bonsai enthusiasts from Kathmandu, Nepal, sharing the ancient art of miniature trees with homes across the country.</p>
         </div>
     </div>
 
     <!-- Story Section -->
-    <div class="max-w-5xl mx-auto px-6 md:px-12 py-16 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center animate-fade-in">
-        <div class="aspect-[4/3] md:aspect-square overflow-hidden bg-gray-50 rounded-2xl border border-gray-100 shadow-sm group shrink-0">
-            <img src="/assets/img/misc/about.jpg" alt="About Bagaicha — handcrafted bonsai from Nepal" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-        </div>
+    <main class="max-w-7xl mx-auto py-12 md:py-16 px-6 md:px-12 bg-gray-50/30">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 md:gap-10 items-start animate-fade-in">
+            <div class="lg:col-span-2">
+                <div class="aspect-[4/3] rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm group">
+                    <img src="/assets/img/misc/about.jpg" alt="About Bagaicha — handcrafted bonsai from Nepal" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                </div>
+            </div>
 
-        <div class="flex flex-col justify-center">
-            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 leading-tight mb-4">Growing bonsai, one tree at a time</h2>
-            <p class="text-sm font-semibold text-primary leading-relaxed mb-4">We are a group of bonsai enthusiasts who have been cultivating these living sculptures for years — driven by a simple belief: nature belongs in every home.</p>
-            <p class="text-xs md:text-sm text-gray-600 leading-relaxed mb-4">Our online store offers a wide variety of bonsai trees, including traditional favourites like juniper and pine, as well as more exotic varieties such as ficus and elm. Every tree is carefully selected, shaped, and cared for before it reaches you.</p>
-            <p class="text-xs md:text-sm text-gray-600 leading-relaxed mb-4">We also carry a curated range of bonsai tools and accessories — pruners, wire, specialist potting mix — everything you need to continue the craft at home. All products are chosen for quality and longevity, not just aesthetics.</p>
-            <p class="text-xs md:text-sm text-gray-600 leading-relaxed mb-4">Beyond selling, we aim to be a resource. From beginner care guides to advanced pruning techniques, our goal is to help every bonsai owner succeed with their tree, long after the purchase.</p>
-            <p class="text-xs md:text-sm text-gray-600 leading-relaxed mb-6">Thank you for visiting Bagaicha. We hope you find a tree that speaks to you.</p>
-
-            <a href="/shop.php" class="inline-block bg-primary hover:bg-primary-dark text-white font-bold rounded-xl px-6 py-3 transition-colors w-fit shadow-sm hover:shadow-md cursor-pointer">Browse Collection</a>
+            <div class="lg:col-span-3 bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 leading-tight mb-4">Growing bonsai, one tree at a time</h2>
+                <p class="text-sm font-semibold text-primary leading-relaxed mb-4">We cultivate living sculptures with one belief at heart: nature belongs in every home.</p>
+                <div class="space-y-4 text-sm text-gray-600 leading-relaxed">
+                    <p>Our store offers a wide variety of bonsai trees, from timeless classics like juniper and pine to expressive varieties like ficus and elm. Each tree is selected, shaped, and cared for before it reaches you.</p>
+                    <p>We also carry a curated range of bonsai tools and essentials - pruners, wire, and specialist potting mix - to help you continue the craft with confidence.</p>
+                    <p>Beyond products, we share practical guidance. From beginner care to advanced pruning, our goal is to support your bonsai journey long after checkout.</p>
+                </div>
+                <div class="mt-6">
+                    <a href="/shop.php" class="inline-block bg-primary hover:bg-primary-dark text-white font-bold rounded-xl px-6 py-3 transition-colors shadow-sm hover:shadow-md cursor-pointer">Browse Collection</a>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
     <!-- Values Section -->
     <div class="bg-gray-50/50 py-16 border-t border-b border-gray-100">
-        <div class="max-w-5xl mx-auto px-6 md:px-12">
+        <div class="max-w-7xl mx-auto px-6 md:px-12">
             <span class="text-[10px] font-bold uppercase tracking-wider text-primary mb-2 block">Why Choose Us</span>
             <h2 class="text-2xl font-extrabold text-gray-800 mb-8">What we stand for</h2>
             
